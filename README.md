@@ -23,6 +23,24 @@ Software Compatibility Matrix
 
 Building and Installing the Software
 ------------------------------------
+As stated above, `royale-ros` is a wrapper around pmd's Royale SDK. To that
+end, the Royale SDK needs to be installed on your system. Due to licensing
+concerns, you will need to acquire the Royale software directly from
+pmd. [Here](http://pmdtec.com/picofamily/software/) is a link to their software
+download page (password protected -- contact pmd directly for a customer
+password). Once you have acquired the binary SDK (typically in a file called
+`libroyale.zip`), you can either install it according to the instructions
+provided with it, or follow [our instructions](doc/royale_install.md) which
+allow you to integrate it with your package manager (assuming you are on a
+Debian-based system like Ubuntu). Once you have installed Royale, continue on
+with the instructions below to built and install `royale-ros`.
+
+Building and installing `royale-ros` is done via `catkin`. The following
+step-by-step instructions should get you up-and-running quickly -- we realize
+there are various ways of doing this, one viable way now follows.
+
+TODO... provide build and install instructions
+
 
 TODO
 ----
