@@ -18,6 +18,7 @@
 #ifndef __ROYALE_ROS_CAMERA_NODELET_H__
 #define __ROYALE_ROS_CAMERA_NODELET_H__
 
+#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <string>

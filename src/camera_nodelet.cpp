@@ -50,7 +50,7 @@ royale_ros::CameraNodelet::onInit()
   // used for detecting a disconnected camera
   this->last_frame_ = ros::Time::now();
 
-  this->np_ = getPrivateNodeHandle();
+  this->np_ = getMTPrivateNodeHandle();
   this->it_.reset(new image_transport::ImageTransport(this->np_));
   this->np_.param<std::string>("serial_number", this->serial_number_, "-");
   this->np_.param<float>("poll_bus_secs", this->poll_bus_secs_, 1.);
