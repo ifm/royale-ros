@@ -44,10 +44,11 @@ class NoValidSDK(Exception):
 class RoyaleDebMaker(object):
     """Class for making a deb file from a Royale SDK"""
 
-    def __init__(self, infile, prefix, arch):
+    def __init__(self, infile, prefix, arch, full):
         self.infile_ = infile
         self.prefix_ = prefix
         self.arch_ = arch
+        self.full_ = full
         self.outdir_ = os.getcwd()
 
         self.tmp_ = None # temporary working directory
@@ -60,14 +61,17 @@ class RoyaleDebMaker(object):
         # Royale SDK Version
         self.royale_version_ = {'major': 0, 'minor': 0, 'patch': 0, 'rev': 0}
 
-    def unzip(self, inzip, outdir):
+    def unzip(self, inzip, outdir, files=None):
         """
         Unzips the passed in `inzip` to the directory `outdir`
 
         NOTE: Python's `zipfile' module is very limited in that permissions and
         symlinks are lost. Let's just use the Unix shell.
         """
-        cmd = "unzip -q %s -d %s" % (inzip, outdir)
+        if files is None:
+            cmd = "unzip -q %s -d %s" % (inzip, outdir)
+        else:
+            cmd = "unzip -q %s %s -d %s" % (inzip, files, outdir)
         print(cmd)
         os.system(cmd)
 
@@ -109,7 +113,7 @@ class RoyaleDebMaker(object):
 
         return tuple(version_list)
 
-    def extract_sdk_to_deb_dir(self, inzip, deb_dir):
+    def extract_sdk_to_deb_dir(self, inzip, deb_dir, full=False):
         """
         Creates the debian file directory structure and unpacks the SDK into
         it.
@@ -121,7 +125,23 @@ class RoyaleDebMaker(object):
 
         path = "%s/%s" % (deb_dir, prefix)
         os.makedirs(path)
-        self.unzip(inzip, path)
+        if full:
+            print("Extracting full SDK...")
+            self.unzip(inzip, path)
+        else:
+            print("Extracting minimal SDK...")
+            self.unzip(inzip, path,
+                       "%s %s %s %s %s %s %s %s" % \
+                       (
+                        "libroyale-*/driver/*",
+                        "libroyale-*/share/*",
+                        "libroyale-*/include/royale.hpp",
+                        "libroyale-*/include/royale/*",
+                        "libroyale-*/include/libuvc/*",
+                        "libroyale-*/bin/libroyale.so*",
+                        "libroyale-*/bin/libspectre*.so",
+                        "libroyale-*/bin/libuvc.so"
+                       ))
         return "%s/%s/%s" % (deb_dir, prefix, os.listdir(path)[0])
 
     def create_debian_control_info(self):
@@ -251,7 +271,7 @@ fi
         self.sdk_dir_ = \
           self.extract_sdk_to_deb_dir("%s/%s" %
                                         (self.zip_dir_, self.target_zip_file_),
-                                        self.deb_dir_)
+                                        self.deb_dir_, self.full_)
         print("SDK extracted to: %s" % self.sdk_dir_)
 
         # create the debian control information
@@ -301,13 +321,15 @@ Typical choices for `--prefix' are `/opt' or `/usr/local'.
                         choices=set(("x86_64", "x86_32", "arm_32")),
                         default="x86_64",
                         help='Architecture for target deb file')
+    parser.add_argument('--full', action='store_true', default=False,
+                        help='Debianize the full SDK')
 
     args = parser.parse_args(sys.argv[1:])
     return args
 
 def main():
     args = get_args()
-    deb = RoyaleDebMaker(args.infile, args.prefix, args.arch)
+    deb = RoyaleDebMaker(args.infile, args.prefix, args.arch, args.full)
     return deb.run()
 
 if __name__ == '__main__':

@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>royale_ros</name>
+  <version>0.1.0</version>
+  <description>pmd Royale-based 3D ToF Camera ROS package</description>
+  <maintainer email="tom@loveparkrobotics.com">Tom Panzarella</maintainer>
+  <license>Apache 2</license>
+  <author email="tom@loveparkrobotics.com">Tom Panzarella</author>
+
+  <url type="repository">https://github.com/lovepark/royale-ros</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>nodelet</depend>
+  <depend>roscpp</depend>
+  <depend>std_msgs</depend>
+  <depend>message_generation</depend>
+  <depend>message_runtime</depend>
+  <depend>cv_bridge</depend>
+  <depend>image_transport</depend>
+  <depend>pcl_ros</depend>
+  <depend>sensor_msgs</depend>
+  <depend>tf2_ros</depend>
+
+  <test_depend>rostest</test_depend>
+
+  <export>
+    <nodelet plugin="${prefix}/nodelets.xml"/>
+  </export>
+</package>

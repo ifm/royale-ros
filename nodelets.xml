@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<library path="lib/libroyale_ros">
+  <class name="royale_ros/camera_nodelet"
+         type="royale_ros::CameraNodelet"
+         base_class_type="nodelet::Nodelet">
+    <description>
+      Interface to the underlying Royale camera device
+    </description>
+  </class>
+</library>

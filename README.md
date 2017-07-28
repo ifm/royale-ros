@@ -16,7 +16,7 @@ Software Compatibility Matrix
   <tr>
     <td>0.1.0</td>
     <td>3.5</td>
-    <td>Ubuntu 16.04/Kinetic, Ubuntu 14.04/Indigo</td>
+    <td>Ubuntu 16.04/Kinetic</td>
     <td>Pico Flexx</td>
   </tr>
 </table>
@@ -33,11 +33,12 @@ password). Once you have acquired the binary SDK (typically in a file called
 provided with it, or follow [our instructions](doc/royale_install.md) which
 allow you to integrate it with your package manager (assuming you are on a
 Debian-based system like Ubuntu). Once you have installed Royale, continue on
-with the instructions below to built and install `royale-ros`.
+with the instructions below to build and install `royale-ros`.
 
-Building and installing `royale-ros` is done via `catkin`. The following
-step-by-step instructions should get you up-and-running quickly -- we realize
-there are various ways of doing this, one viable way now follows.
+Building and installing `royale-ros` is done via
+[catkin](http://wiki.ros.org/catkin). The following step-by-step instructions
+should get you up-and-running quickly -- we realize there are various ways of
+doing this, one viable way now follows.
 
 TODO... provide build and install instructions
 

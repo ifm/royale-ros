@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<!--
+ Copyright (C) 2017 Love Park Robotics, LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+ http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distribted on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<launch>
+  <arg name="camera" default="camera"/>
+  <arg name="serial_number" default="-"/>
+
+  <node pkg="nodelet"
+        type="nodelet"
+        name="standalone_nodelet"
+        args="manager"
+        output="screen"/>
+
+  <node pkg="nodelet"
+        type="nodelet"
+        name="$(arg camera)"
+        args="load royale_ros/camera_nodelet standalone_nodelet"
+        output="screen">
+
+    <!-- You can add topic remappings here, e.g.: -->
+    <!-- <remap from="/$(arg camera)/stream/1/cloud" to="/$(arg camera)/cloud"/> -->
+
+    <rosparam subst_value="true">
+      #
+      # This is the specific camera to connect to
+      # or the special string "-" to connect to the
+      # first camera found on the bus
+      #
+      serial_number: "$(arg serial_number)"
+
+      #
+      # If a connection to the desired camera cannot be made,
+      # or is lost, this is how often to poll the bus to see
+      # if it was plugged back in
+      #
+      poll_bus_secs: 1.0
+
+      #
+      # Time in seconds used to detect a disconnected camera. For responsive
+      # behavior, you should set: timeout_secs >= poll_bus_secs
+      #
+      timeout_secs: 1.0
+    </rosparam>
+  </node>
+</launch>
