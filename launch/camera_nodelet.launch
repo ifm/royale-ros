@@ -53,6 +53,17 @@
       # behavior, you should set: timeout_secs >= poll_bus_secs
       #
       timeout_secs: 1.0
+
+      #
+      # Royale optical frame id
+      #
+      optical_frame: $(arg camera)_optical_link
     </rosparam>
   </node>
+
+  <!-- coord frame transform from Royale optical frame to ROS sensor frame -->
+  <node pkg="tf2_ros"
+        type="static_transform_publisher"
+        name="$(arg camera)_tf"
+        args="0 0 0 -1.5707963267948966 0 -1.5707963267948966 $(arg camera)_link $(arg camera)_optical_link"/>
 </launch>

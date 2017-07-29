@@ -22,6 +22,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include <image_transport/image_transport.h>
@@ -67,6 +68,7 @@ namespace royale_ros
     std::string serial_number_;
     float poll_bus_secs_;
     float timeout_secs_;
+    std::string optical_frame_;
 
     bool instantiated_publishers_;
     std::uint32_t access_level_;
@@ -80,10 +82,13 @@ namespace royale_ros
     std::unique_ptr<image_transport::ImageTransport> it_;
     std::vector<ros::Publisher> cloud_pubs_;
     std::vector<ros::Publisher> exposure_pubs_;
-    std::vector<image_transport::Publisher> xyz_pubs_;
     std::vector<image_transport::Publisher> noise_pubs_;
     std::vector<image_transport::Publisher> gray_pubs_;
     std::vector<image_transport::Publisher> conf_pubs_;
+
+    std::string current_use_case_;
+    std::mutex current_use_case_mutex_;
+    std::map<std::string, std::vector<std::uint16_t> > stream_id_lut_;
 
   }; // end: class CameraNodelet
 
