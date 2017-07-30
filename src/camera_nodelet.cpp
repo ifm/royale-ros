@@ -39,6 +39,7 @@
 #include <pluginlib/class_list_macros.h>
 #include <ros/ros.h>
 #include <royale_ros/ExposureTimes.h>
+#include <royale_ros/Config.h>
 #include <royale_ros/Dump.h>
 #include <royale.hpp>
 #include <sensor_msgs/Image.h>
@@ -88,6 +89,13 @@ royale_ros::CameraNodelet::onInit()
     ("Dump", std::bind(&CameraNodelet::Dump, this,
                               std::placeholders::_1,
                               std::placeholders::_2));
+
+  this->config_srv_ =
+    this->np_.advertiseService<royale_ros::Config::Request,
+                               royale_ros::Config::Response>
+    ("Config", std::bind(&CameraNodelet::Config, this,
+                         std::placeholders::_1,
+                         std::placeholders::_2));
 }
 
 void
@@ -276,6 +284,121 @@ royale_ros::CameraNodelet::RescheduleTimer()
   this->timer_.stop();
   this->timer_.setPeriod(ros::Duration(this->poll_bus_secs_));
   this->timer_.start();
+}
+
+bool
+royale_ros::CameraNodelet::Config(royale_ros::Config::Request& req,
+                                  royale_ros::Config::Response& resp)
+{
+  std::lock_guard<std::mutex> lock(this->cam_mutex_);
+  if (this->cam_ == nullptr)
+    {
+      NODELET_ERROR_STREAM("No camera instantiated with serial number: "
+                           << this->serial_number_);
+      return false;
+    }
+
+  NODELET_INFO_STREAM("Handling Config request...");
+
+  json j;
+  try
+    {
+      j = json::parse(req.json);
+    }
+  catch (const std::exception& ex)
+    {
+      NODELET_ERROR_STREAM("Failed to parse json: " << ex.what());
+      NODELET_INFO_STREAM("json was:\n" << req.json);
+      resp.status = -1;
+      resp.msg = ex.what();
+      return true;
+    }
+
+  if (! j.is_object())
+    {
+      NODELET_ERROR_STREAM("The passed in json should be an object!");
+      NODELET_INFO_STREAM("json was:\n" << j.dump());
+      resp.status = -1;
+      resp.msg = "The passed in json shuld be an object";
+      return true;
+    }
+
+  //
+  // Imager parameters
+  //
+  // XXX: Ultimately, we will generalize this, however, for now,
+  // there is really only 1 mutable imager parameter (the so called "Use Case")
+  // at Level 1 access and so we simply process it in-line.
+  //
+  //
+  royale::CameraStatus status = OK_;
+  json j_img = j["Imager"];
+  if (! j_img.is_null())
+    {
+      if (j_img.count("CurrentUseCase") == 1)
+        {
+          json uc_root = j_img["CurrentUseCase"];
+
+          for (auto it = uc_root.begin(); it != uc_root.end(); ++it)
+            {
+              std::string key = it.key();
+              // NODELET_INFO_STREAM("Processing: key="
+              //                      << key << ", val="
+              //                      << uc_root[key].dump(2));
+
+              if (key == "Name")
+                {
+                  status =
+                    this->cam_->setUseCase(
+                      royale::String(uc_root[key].get<std::string>()));
+
+                  if (status == OK_)
+                    {
+                      {
+                        std::lock_guard<std::mutex>
+                          lock(this->current_use_case_mutex_);
+                        royale::String current_use_case;
+                        if (this->cam_->getCurrentUseCase(
+                              current_use_case) == OK_)
+                          {
+                            this->current_use_case_ =
+                              std::string(current_use_case.c_str());
+                          }
+                        else
+                          {
+                            NODELET_WARN_STREAM("current_use_case is stale!");
+                          }
+                      }
+                    }
+                }
+              else
+                {
+                  // read-only parameter
+                  continue;
+                }
+
+              //
+              // Hard stop!
+              //
+              if (status != OK_)
+                {
+                  resp.status = (int) status;
+                  resp.msg =
+                    std::string(royale::getErrorString(status).c_str());
+
+                  NODELET_WARN_STREAM("While processing: "
+                                      << key << " -> (" << resp.status
+                                      << ") " << resp.msg);
+                  NODELET_INFO_STREAM("json was:\n" << req.json);
+                  return true;
+                }
+            }
+        }
+    }
+
+  resp.status = 0;
+  resp.msg = "OK";
+  return true;
 }
 
 bool

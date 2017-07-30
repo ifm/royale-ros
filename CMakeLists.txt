@@ -32,6 +32,7 @@ add_service_files(
   Ls.srv
   Open.srv
   Dump.srv
+  Config.srv
   )
 
 add_message_files(
@@ -84,6 +85,11 @@ target_link_libraries(camera_manager
   )
 add_dependencies(camera_manager ${PROJECT_NAME}_generate_messages_cpp)
 
+add_executable(config src/config.cpp)
+target_link_libraries(config
+  ${catkin_LIBRARIES}
+  )
+
 #############
 ## Install ##
 #############
@@ -91,6 +97,7 @@ add_dependencies(camera_manager ${PROJECT_NAME}_generate_messages_cpp)
 install(TARGETS
   royale_ros
   camera_manager
+  config
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

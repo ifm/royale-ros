@@ -28,6 +28,7 @@
 #include <image_transport/image_transport.h>
 #include <nodelet/nodelet.h>
 #include <ros/ros.h>
+#include <royale_ros/Config.h>
 #include <royale_ros/Dump.h>
 #include <royale.hpp>
 
@@ -48,7 +49,9 @@ namespace royale_ros
     //
     // ROS services
     //
-    bool Dump(royale_ros::Dump::Request& eq, royale_ros::Dump::Response& resp);
+    bool Dump(royale_ros::Dump::Request& req, royale_ros::Dump::Response& resp);
+    bool Config(royale_ros::Config::Request& req,
+                royale_ros::Config::Response& resp);
 
     //
     // Royale callback, basically functions as our main
@@ -61,6 +64,10 @@ namespace royale_ros
     //
     void InitCamera();
     void RescheduleTimer();
+
+    //
+    // State
+    //
 
     std::unique_ptr<royale::ICameraDevice> cam_;
     std::mutex cam_mutex_;
@@ -76,6 +83,7 @@ namespace royale_ros
 
     ros::NodeHandle nh_, np_;
     ros::ServiceServer dump_srv_;
+    ros::ServiceServer config_srv_;
     ros::Timer timer_;
 
     std::unique_ptr<image_transport::ImageTransport> it_;
