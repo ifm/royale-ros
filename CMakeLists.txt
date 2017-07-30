@@ -29,8 +29,6 @@ find_package(catkin REQUIRED COMPONENTS
 #######################################
 add_service_files(
   FILES
-  Ls.srv
-  Open.srv
   Dump.srv
   Config.srv
   )
@@ -78,12 +76,10 @@ target_link_libraries(royale_ros
   ${royale_LIBS}
   )
 
-add_executable(camera_manager src/camera_manager.cpp)
-target_link_libraries(camera_manager
-  royale_ros
-  ${catkin_LIBRARIES}
+add_executable(lscam src/lscam.cpp)
+target_link_libraries(lscam
+  ${royale_LIBS}
   )
-add_dependencies(camera_manager ${PROJECT_NAME}_generate_messages_cpp)
 
 add_executable(config src/config.cpp)
 target_link_libraries(config
@@ -96,8 +92,8 @@ target_link_libraries(config
 
 install(TARGETS
   royale_ros
-  camera_manager
   config
+  lscam
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
