@@ -24,7 +24,7 @@ using json = nlohmann::json;
 
 int main(int argc, const char **argv)
 {
-  json retval; // list
+  json retval = json::parse("[]");
 
   royale::CameraManager manager;
   auto camlist = manager.getConnectedCameraList();
