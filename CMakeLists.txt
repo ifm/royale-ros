@@ -6,6 +6,7 @@ set(ROYALE_ROOT "/opt/royale" CACHE STRING "Root directory to Royale SDK")
 find_package(royale REQUIRED
   PATHS ${ROYALE_ROOT}/share
   )
+find_package(Boost REQUIRED)
 
 MESSAGE(STATUS "ROYALE_ROOT: " ${ROYALE_ROOT})
 MESSAGE(STATUS "royale_LIB_DIR: " ${royale_LIB_DIR})
@@ -30,7 +31,7 @@ add_service_files(
   FILES
   Ls.srv
   Open.srv
-  GetUseCases.srv
+  Dump.srv
   )
 
 add_message_files(
@@ -63,6 +64,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-conversion -std=c++11")
 include_directories(
   include
   ${ROYALE_ROOT}/include
+  ${Boost_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
   )
 link_directories(

@@ -28,7 +28,7 @@
 #include <image_transport/image_transport.h>
 #include <nodelet/nodelet.h>
 #include <ros/ros.h>
-#include <royale_ros/GetUseCases.h>
+#include <royale_ros/Dump.h>
 #include <royale.hpp>
 
 namespace royale_ros
@@ -48,8 +48,7 @@ namespace royale_ros
     //
     // ROS services
     //
-    bool GetUseCases(royale_ros::GetUseCases::Request& req,
-                     royale_ros::GetUseCases::Response& resp);
+    bool Dump(royale_ros::Dump::Request& eq, royale_ros::Dump::Response& resp);
 
     //
     // Royale callback, basically functions as our main
@@ -76,7 +75,7 @@ namespace royale_ros
     std::mutex last_frame_mutex_;
 
     ros::NodeHandle nh_, np_;
-    ros::ServiceServer get_use_cases_srv_;
+    ros::ServiceServer dump_srv_;
     ros::Timer timer_;
 
     std::unique_ptr<image_transport::ImageTransport> it_;

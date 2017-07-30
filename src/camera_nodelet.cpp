@@ -15,6 +15,7 @@
  */
 
 #include <royale_ros/camera_nodelet.h>
+#include <royale_ros/contrib/json.hpp>
 
 #include <algorithm>
 #include <chrono>
@@ -28,6 +29,7 @@
 #include <utility>
 #include <vector>
 
+#include <boost/algorithm/string.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
 #include <nodelet/nodelet.h>
@@ -37,12 +39,14 @@
 #include <pluginlib/class_list_macros.h>
 #include <ros/ros.h>
 #include <royale_ros/ExposureTimes.h>
-#include <royale_ros/GetUseCases.h>
+#include <royale_ros/Dump.h>
 #include <royale.hpp>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
 
 namespace enc = sensor_msgs::image_encodings;
+using json = nlohmann::json;
+constexpr auto OK_ = royale::CameraStatus::SUCCESS;
 
 void
 royale_ros::CameraNodelet::onInit()
@@ -78,10 +82,10 @@ royale_ros::CameraNodelet::onInit()
   //---------------------
   // Advertised Services
   //---------------------
-  this->get_use_cases_srv_ =
-    this->np_.advertiseService<royale_ros::GetUseCases::Request,
-                               royale_ros::GetUseCases::Response>
-    ("GetUseCases", std::bind(&CameraNodelet::GetUseCases, this,
+  this->dump_srv_ =
+    this->np_.advertiseService<royale_ros::Dump::Request,
+                               royale_ros::Dump::Response>
+    ("Dump", std::bind(&CameraNodelet::Dump, this,
                               std::placeholders::_1,
                               std::placeholders::_2));
 }
@@ -148,7 +152,7 @@ royale_ros::CameraNodelet::InitCamera()
 
   if (this->cam_ != nullptr)
     {
-      if (this->cam_->initialize() != royale::CameraStatus::SUCCESS)
+      if (this->cam_->initialize() != OK_)
         {
           NODELET_INFO_STREAM("Failed to initialize() camera: "
                               << this->serial_number_);
@@ -160,8 +164,7 @@ royale_ros::CameraNodelet::InitCamera()
                               << this->serial_number_);
 
           royale::CameraAccessLevel level;
-          if (this->cam_->getAccessLevel(level) ==
-              royale::CameraStatus::SUCCESS)
+          if (this->cam_->getAccessLevel(level) == OK_)
             {
               this->access_level_ = (std::uint32_t) level;
             }
@@ -178,15 +181,13 @@ royale_ros::CameraNodelet::InitCamera()
               // number of streams available across all camera use-cases
               //
               royale::Vector<royale::String> use_cases;
-              auto status = this->cam_->getUseCases(use_cases);
-              if (status == royale::CameraStatus::SUCCESS)
+              if (this->cam_->getUseCases(use_cases) == OK_)
                 {
                   std::uint32_t max_num_streams = 1;
                   for(auto& uc : use_cases)
                     {
                       std::uint32_t nstreams = 0;
-                      if (this->cam_->getNumberOfStreams(uc, nstreams) !=
-                          royale::CameraStatus::SUCCESS)
+                      if (this->cam_->getNumberOfStreams(uc, nstreams) != OK_)
                         {
                           NODELET_WARN_STREAM("Could not get stream count: "
                                               << uc.c_str());
@@ -243,8 +244,7 @@ royale_ros::CameraNodelet::InitCamera()
           {
             std::lock_guard<std::mutex> lock(this->current_use_case_mutex_);
             royale::String current_use_case;
-            if (this->cam_->getCurrentUseCase(current_use_case) ==
-                royale::CameraStatus::SUCCESS)
+            if (this->cam_->getCurrentUseCase(current_use_case) == OK_)
               {
                 this->current_use_case_ = std::string(current_use_case.c_str());
               }
@@ -279,8 +279,8 @@ royale_ros::CameraNodelet::RescheduleTimer()
 }
 
 bool
-royale_ros::CameraNodelet::GetUseCases(royale_ros::GetUseCases::Request& req,
-                                       royale_ros::GetUseCases::Response& resp)
+royale_ros::CameraNodelet::Dump(royale_ros::Dump::Request& req,
+                                royale_ros::Dump::Response& resp)
 {
   std::lock_guard<std::mutex> lock(this->cam_mutex_);
   if (this->cam_ == nullptr)
@@ -290,19 +290,106 @@ royale_ros::CameraNodelet::GetUseCases(royale_ros::GetUseCases::Request& req,
       return false;
     }
 
-  royale::Vector<royale::String> use_cases;
-  auto status = this->cam_->getUseCases(use_cases);
-  if (status != royale::CameraStatus::SUCCESS)
+  //
+  // "Device" information
+  //
+  royale::String r_string;
+  std::unordered_map<std::string, std::string> device_info;
+  if (this->cam_->getId(r_string) == OK_)
     {
-      NODELET_ERROR_STREAM((int) status
-                           << ": " << royale::getErrorString(status));
-      return false;
+      device_info.emplace(std::make_pair("Id", std::string(r_string.c_str())));
     }
 
-  std::transform(use_cases.begin(), use_cases.end(),
-                 std::back_inserter(resp.use_cases),
-                 [](royale::String& s) -> std::string
-                 { return std::string(s.c_str()); });
+  if (this->cam_->getCameraName(r_string) == OK_)
+    {
+      device_info.emplace(
+        std::make_pair("Name", std::string(r_string.c_str())));
+    }
+
+  //
+  // "Imager" information
+  //
+
+  royale::Vector<royale::String> use_cases;
+  json uc_vec; // list
+  if (this->cam_->getUseCases(use_cases) == OK_)
+    {
+      std::transform(use_cases.begin(), use_cases.end(),
+                     std::back_inserter(uc_vec),
+                     [](royale::String& s) -> std::string
+                     { return std::string(s.c_str()); });
+    }
+
+  std::string current_use_case;
+  {
+    std::lock_guard<std::mutex> lock(this->current_use_case_mutex_);
+    current_use_case = this->current_use_case_;
+  }
+
+  std::uint32_t nstreams = 0;
+  this->cam_->getNumberOfStreams(royale::String(current_use_case.c_str()),
+                                 nstreams);
+
+  royale::Vector<royale::StreamId> streamids;
+  json streams; // list
+  if (this->cam_->getStreams(streamids) == OK_)
+    {
+      std::transform(streamids.begin(), streamids.end(),
+                     std::back_inserter(streams),
+                     [](royale::StreamId& s) -> std::string
+                     { return std::to_string((std::uint16_t) s); });
+    }
+
+  std::map<std::string, std::vector<std::string> > exp_limits;
+  for (auto& sid : streamids)
+    {
+      royale::Pair<std::uint32_t, std::uint32_t> limits;
+      if (this->cam_->getExposureLimits(limits, sid) == OK_)
+        {
+          std::vector<std::string> l;
+          l.push_back(std::to_string(limits.first));
+          l.push_back(std::to_string(limits.second));
+          exp_limits.emplace(
+            std::make_pair(std::to_string((std::uint16_t) sid), l));
+        }
+    }
+
+  std::uint16_t max_width = 0;
+  std::uint16_t max_height = 0;
+  this->cam_->getMaxSensorWidth(max_width);
+  this->cam_->getMaxSensorHeight(max_height);
+
+  std::uint16_t max_fps = 0;
+  std::uint16_t fps;
+  this->cam_->getMaxFrameRate(max_fps);
+  this->cam_->getFrameRate(fps);
+
+  //
+  // Serialize to JSON
+  //
+  json j =
+    {
+      {"Device", json(device_info)},
+      {"Imager",
+       {
+         {"MaxSensorWidth", std::to_string(max_width)},
+         {"MaxSensorHeight", std::to_string(max_height)},
+         {"UseCases", uc_vec},
+         {"CurrentUseCase",
+          {
+            {"Name", current_use_case},
+            {"NumberOfStreams", std::to_string(nstreams)},
+            {"Streams", streams},
+            {"ExposureLimits", json(exp_limits)},
+            {"FrameRate", std::to_string(fps)},
+            {"MaxFrameRate", std::to_string(max_fps)}
+          }
+         }
+       }
+      }
+    };
+
+  resp.config = j.dump(2);
   return true;
 }
 
