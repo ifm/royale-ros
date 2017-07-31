@@ -21,6 +21,14 @@ Software Compatibility Matrix
   </tr>
 </table>
 
+**NOTE:** Theoretically, any camera supported by Royale will be compatible with
+  this library. However, the above listed hardware is what we have availale to
+  us for testing. We welcome your feedback related to other Royale-based
+  cameras and their compatibility with this ROS interface.
+
+**NOTE 2:** This library is (currently) limited to Royale's Level 1 access
+  features.
+
 Building and Installing the Software
 ------------------------------------
 As stated above, `royale-ros` is a wrapper around pmd's Royale SDK. To that

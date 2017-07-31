@@ -24,7 +24,7 @@ tpanzarella@tuna: $ cd utils/
 [ ~/dev/royale-ros/utils ]
 tpanzarella@tuna: $ ./debianize-royale.py --help
 usage: debianize-royale.py [-h] --infile INFILE [--prefix PREFIX]
-                           [--arch {x86_32,x86_64,arm_32}]
+                           [--arch {x86_32,x86_64,arm_32}] [--full]
 
 Create a deb file for the Royale SDK from libroyale.zip
 
@@ -40,14 +40,21 @@ optional arguments:
                         (default: /opt)
   --arch {x86_32,x86_64,arm_32}
                         Architecture for target deb file (default: x86_64)
+  --full                Debianize the full SDK (default: False)
 ```
 
 As noted in the help message above, `debianize-royale.py` is parameterized via
 an `--infile` (the full path to your `libroyale.zip` file acquired from pmd),
 `--prefix` (the root-level prefix for where you want Royale installed), and the
-`--arch` (the architecture-specific SDK you wish to re-package as a deb). For
-the example that follows, we will install Royale into `/opt` (the default) and
-build the 64-bit x86 Linux package (also the default).
+`--arch` (the architecture-specific SDK you wish to re-package as a deb). There
+is also the `--full` flag. If included on the command-line it will install the
+*full* Royale SDK, including the GUI, example programs, documentation, etc. For
+ROS users, **this is not recommended**. The Royale SDK installs its own copies
+of various Qt libraries that, depending upon where they are in your runtime
+linker's path, could render some ROS tools (e.g., `rqt_graph` unusable).
+
+For the example that follows, we will install Royale into `/opt` (the default)
+and build the 64-bit x86 Linux package (also the default).
 
 ```
 [ ~/dev/royale-ros/utils ]
@@ -96,9 +103,13 @@ Creating new symlink: /opt/royale -> /opt/libroyale-3.5.0.28-LINUX-x86-64Bit
 ```
 
 You'll note on the last line of output, a convenience symlink has been created
-for you. To validate the installation, you should now plug in your camera. For
-exemplary purposes, we will use a Pico Flexx. Once your camera is plugged in,
-you can follow the steps below:
+for you. If you did not install the "full" SDK, you are done. The necessary
+libraries, headers, and udev rules are in place and you can begin to
+install/use `royale-ros`.
+
+If you did install the "full" SDK, to validate the installation, you should now
+plug in your camera. For exemplary purposes, we will use a Pico Flexx. Once
+your camera is plugged in, you can follow the steps below:
 
 ```
 [ ~/dev/royale-ros/utils ]
