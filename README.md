@@ -6,6 +6,11 @@ from within [ROS](http://www.ros.org/) software systems.
 
 Software Compatibility Matrix
 -----------------------------
+
+_This software is still under active development working toward its first
+supported release version. Use the HEAD at your own risk. Everything is subject
+to change. You have been warned._
+
 <table>
   <tr>
     <th>royale-ros version</th>
