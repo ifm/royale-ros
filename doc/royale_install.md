@@ -51,7 +51,7 @@ is also the `--full` flag. If included on the command-line it will install the
 *full* Royale SDK, including the GUI, example programs, documentation, etc. For
 ROS users, **this is not recommended**. The Royale SDK installs its own copies
 of various Qt libraries that, depending upon where they are in your runtime
-linker's path, could render some ROS tools (e.g., `rqt_graph` unusable).
+linker's path, could render some ROS tools (e.g., `rqt_graph`) unusable.
 
 For the example that follows, we will install Royale into `/opt` (the default)
 and build the 64-bit x86 Linux package (also the default).
