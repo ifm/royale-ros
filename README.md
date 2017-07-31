@@ -154,7 +154,8 @@ _(more documentation is forthcoming)_
 
 TODO
 ----
-Please see the [Github Issues](https://github.com/lovepark/royale-ros/issues).
+The current TODO list is located [here](TODO.md). Please also see the
+[Github Issues](https://github.com/lovepark/royale-ros/issues).
 
 LICENSE
 -------
