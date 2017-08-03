@@ -3,14 +3,8 @@ royale-ros TODO
 
 * Enumerate the features of the software in the REAME
 * Create comprehensive documentation for ROS users
-* Add an OpenCV encoding of the point cloud data (3 spatial planes)
 * Publish the camera intrinsics on a `camera_info` topic
 * Add a `Dump` service wrapper similar to `Config`
-* Performance enhancements
-  * In-line transformation of the point cloud to the sensor frame while we are
-    parsing / constructing the data. This will save users some cycles by not
-    having to transform the points from the optical frame. This is particulary
-    helpful when operating at the high frame-rates.
 * Expose a topic for changing exposure times on the fly
 * Provide a service to shutdown the camera stream (do these Royale cameras get
   hot if pulsing the illumination unit all day?)

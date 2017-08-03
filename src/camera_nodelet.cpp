@@ -70,6 +70,8 @@ royale_ros::CameraNodelet::onInit()
   this->np_.param<float>("timeout_secs", this->timeout_secs_, 1.);
   this->np_.param<std::string>("optical_frame", this->optical_frame_,
                                "camera_optical_link");
+  this->np_.param<std::string>("sensor_frame", this->sensor_frame_,
+                               "camera_link");
 
   //------------------------------------------------------------
   // Instantiate the underlying camera device by polling the bus
@@ -227,6 +229,10 @@ royale_ros::CameraNodelet::InitCamera()
                       this->cloud_pubs_.push_back(
                         this->np_.advertise<pcl::PointCloud<pcl::PointXYZI> >(
                           "stream/" + std::to_string(i+1) + "/cloud", 1));
+
+                      this->xyz_pubs_.push_back(
+                        this->it_->advertise(
+                          "stream/" + std::to_string(i+1) + "/xyz", 1));
 
                       this->noise_pubs_.push_back(
                         this->it_->advertise(
@@ -555,13 +561,16 @@ royale_ros::CameraNodelet::onNewData(const royale::DepthData *data)
     }
 
   //
-  // NOTE: we will publish all data in the optical frame and just rely on a
-  // static tf to convert to a standard ROS sensor frame. In our example launch
-  // file we will provide a static_transform_publisher for this.
+  // 2D images are published in optical frame, 3D cloud(s) are published in
+  // sensor frame
   //
   std_msgs::Header head = std_msgs::Header();
   head.stamp = stamp;
   head.frame_id = this->optical_frame_;
+
+  std_msgs::Header cloud_head = std_msgs::Header();
+  cloud_head.stamp = stamp;
+  cloud_head.frame_id = this->sensor_frame_;
 
   //
   // Exposure times
@@ -586,20 +595,22 @@ royale_ros::CameraNodelet::onNewData(const royale::DepthData *data)
   pcl::PointCloud<pcl::PointXYZI>::Ptr
     cloud_(new pcl::PointCloud<pcl::PointXYZI>());
 
-  cv::Mat gray_, conf_, noise_;
+  cv::Mat gray_, conf_, noise_, xyz_;
   gray_.create(data->height, data->width, CV_16UC1);
   conf_.create(data->height, data->width, CV_8UC1);
   noise_.create(data->height, data->width, CV_32FC1);
+  xyz_.create(data->height, data->width, CV_32FC3);
 
   std::uint16_t* gray_ptr;
   std::uint8_t* conf_ptr;
   float* noise_ptr;
+  float* xyz_ptr;
 
   std::size_t npts = data->points.size();
   int col = 0;
   int row = -1;
+  int xyz_col = 0;
 
-  cloud_->header.frame_id = this->optical_frame_;
   cloud_->width = data->width;
   cloud_->height = data->height;
   cloud_->is_dense = true;
@@ -610,6 +621,7 @@ royale_ros::CameraNodelet::onNewData(const royale::DepthData *data)
       pcl::PointXYZI& pt = cloud_->points[i];
 
       col = i % data->width;
+      xyz_col = col * 3;
 
       if (col == 0)
         {
@@ -617,17 +629,23 @@ royale_ros::CameraNodelet::onNewData(const royale::DepthData *data)
           gray_ptr = gray_.ptr<std::uint16_t>(row);
           conf_ptr = conf_.ptr<std::uint8_t>(row);
           noise_ptr = noise_.ptr<float>(row);
+          xyz_ptr = xyz_.ptr<float>(row);
         }
 
       gray_ptr[col] = data->points[i].grayValue;
       conf_ptr[col] = data->points[i].depthConfidence;
       noise_ptr[col] = data->points[i].noise;
 
-      pt.x = data->points[i].x;
-      pt.y = data->points[i].y;
-      pt.z = data->points[i].z;
+      // convert to sensor frame
+      pt.x = data->points[i].z;
+      pt.y = -data->points[i].x;
+      pt.z = -data->points[i].y;
       pt.data_c[0] = pt.data_c[1] = pt.data_c[2] = pt.data_c[3] = 0;
       pt.intensity = data->points[i].grayValue;
+
+      xyz_ptr[xyz_col] = pt.x;
+      xyz_ptr[xyz_col + 1] = pt.y;
+      xyz_ptr[xyz_col + 2] = pt.z;
     }
 
   //
@@ -639,7 +657,9 @@ royale_ros::CameraNodelet::onNewData(const royale::DepthData *data)
     cv_bridge::CvImage(head, enc::TYPE_8UC1, conf_).toImageMsg();
   sensor_msgs::ImagePtr noise_msg =
     cv_bridge::CvImage(head, enc::TYPE_32FC1, noise_).toImageMsg();
-  cloud_->header = pcl_conversions::toPCL(head);
+  cloud_->header = pcl_conversions::toPCL(cloud_head);
+  sensor_msgs::ImagePtr xyz_msg =
+    cv_bridge::CvImage(cloud_head, enc::TYPE_32FC3, xyz_).toImageMsg();
 
   //
   // Publish the data
@@ -650,6 +670,7 @@ royale_ros::CameraNodelet::onNewData(const royale::DepthData *data)
       this->conf_pubs_.at(idx).publish(conf_msg);
       this->noise_pubs_.at(idx).publish(noise_msg);
       this->cloud_pubs_.at(idx).publish(cloud_);
+      this->xyz_pubs_.at(idx).publish(xyz_msg);
     }
   catch (const std::out_of_range& ex)
     {

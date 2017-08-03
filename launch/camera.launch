@@ -55,9 +55,10 @@
       timeout_secs: 1.0
 
       #
-      # Royale optical frame id
+      # tf frame names
       #
       optical_frame: $(arg camera)_optical_link
+      sensor_frame:  $(arg camera)_link
     </rosparam>
   </node>
 
