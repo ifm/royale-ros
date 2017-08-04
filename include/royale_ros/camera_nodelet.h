@@ -64,6 +64,7 @@ namespace royale_ros
     //
     void InitCamera();
     void RescheduleTimer();
+    void CacheIntrinsics();
 
     //
     // State
@@ -94,6 +95,14 @@ namespace royale_ros
     std::vector<image_transport::Publisher> gray_pubs_;
     std::vector<image_transport::Publisher> conf_pubs_;
     std::vector<image_transport::Publisher> xyz_pubs_;
+    // REP 104 suggests publishing the intrinsics with every frame
+    // see: http://www.ros.org/reps/rep-0104.html
+    //
+    // So, we register each calibration message to a frame and on each stream
+    // for mixed-mode use cases.
+    std::vector<ros::Publisher> intrinsic_pubs_;
+    sensor_msgs::CameraInfo intrinsic_msg_;
+    std::mutex intrinsic_mutex_;
 
     std::string current_use_case_;
     std::mutex current_use_case_mutex_;

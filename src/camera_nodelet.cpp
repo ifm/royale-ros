@@ -42,6 +42,7 @@
 #include <royale_ros/Config.h>
 #include <royale_ros/Dump.h>
 #include <royale.hpp>
+#include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
 
@@ -221,6 +222,10 @@ royale_ros::CameraNodelet::InitCamera()
                                       << max_num_streams);
                   for (std::uint32_t i = 0; i < max_num_streams; ++i)
                     {
+                      this->intrinsic_pubs_.push_back(
+                        this->np_.advertise<sensor_msgs::CameraInfo>(
+                          "stream/" + std::to_string(i+1) + "/camera_info", 1));
+
                       this->exposure_pubs_.push_back(
                         this->np_.advertise<royale_ros::ExposureTimes>(
                           "stream/" + std::to_string(i+1) +
@@ -248,6 +253,7 @@ royale_ros::CameraNodelet::InitCamera()
                     }
 
                   this->instantiated_publishers_ = true;
+                  this->CacheIntrinsics();
                 }
             } // end: if (! this->instantiated_publishers_)
 
@@ -282,6 +288,89 @@ royale_ros::CameraNodelet::InitCamera()
     }
 
   this->RescheduleTimer();
+}
+
+void
+royale_ros::CameraNodelet::CacheIntrinsics()
+{
+  std::lock_guard<std::mutex> lock(this->intrinsic_mutex_);
+  NODELET_INFO_STREAM("Caching intrinsic calibration...");
+
+  this->intrinsic_msg_ = sensor_msgs::CameraInfo();
+
+  royale::LensParameters intrinsics;
+  royale::CameraStatus status = this->cam_->getLensParameters(intrinsics);
+  if (status != OK_)
+    {
+      NODELET_WARN_STREAM("Could not get lens parameters: "
+                          << royale::getErrorString(status).c_str());
+      return;
+    }
+
+  std::uint16_t max_width, max_height;
+  status = this->cam_->getMaxSensorHeight(max_height);
+  if (status != OK_)
+    {
+      NODELET_WARN_STREAM("Could not get max sensor height: "
+                          << royale::getErrorString(status).c_str());
+      return;
+    }
+  status = this->cam_->getMaxSensorWidth(max_width);
+  if (status != OK_)
+    {
+      NODELET_WARN_STREAM("Could not get max sensor width: "
+                          << royale::getErrorString(status).c_str());
+      return;
+    }
+
+  // image dimensions
+  this->intrinsic_msg_.height = max_height;
+  this->intrinsic_msg_.width = max_width;
+
+  // radial and tangential distortion
+  this->intrinsic_msg_.distortion_model = "plumb_bob";
+  this->intrinsic_msg_.D.resize(5);
+  this->intrinsic_msg_.D[0] = intrinsics.distortionRadial[0];
+  this->intrinsic_msg_.D[1] = intrinsics.distortionRadial[1];
+  this->intrinsic_msg_.D[2] = intrinsics.distortionTangential.first;
+  this->intrinsic_msg_.D[3] = intrinsics.distortionTangential.second;
+  this->intrinsic_msg_.D[4] = intrinsics.distortionRadial[2];
+
+  // camera matrix
+  this->intrinsic_msg_.K[0] = intrinsics.focalLength.first;
+  this->intrinsic_msg_.K[1] = 0;
+  this->intrinsic_msg_.K[2] = intrinsics.principalPoint.first;
+  this->intrinsic_msg_.K[3] = 0;
+  this->intrinsic_msg_.K[4] = intrinsics.focalLength.second;
+  this->intrinsic_msg_.K[5] = intrinsics.principalPoint.second;
+  this->intrinsic_msg_.K[6] = 0;
+  this->intrinsic_msg_.K[7] = 0;
+  this->intrinsic_msg_.K[8] = 1;
+
+  // rectification matrix
+  this->intrinsic_msg_.R[0] = 1;
+  this->intrinsic_msg_.R[1] = 0;
+  this->intrinsic_msg_.R[2] = 0;
+  this->intrinsic_msg_.R[3] = 0;
+  this->intrinsic_msg_.R[4] = 1;
+  this->intrinsic_msg_.R[5] = 0;
+  this->intrinsic_msg_.R[6] = 0;
+  this->intrinsic_msg_.R[7] = 0;
+  this->intrinsic_msg_.R[8] = 1;
+
+  // projection matrix
+  this->intrinsic_msg_.P[0] = intrinsics.focalLength.first;
+  this->intrinsic_msg_.P[1] = 0;
+  this->intrinsic_msg_.P[2] = intrinsics.principalPoint.first;
+  this->intrinsic_msg_.P[3] = 0;
+  this->intrinsic_msg_.P[4] = 0;
+  this->intrinsic_msg_.P[5] = intrinsics.focalLength.second;
+  this->intrinsic_msg_.P[6] = intrinsics.principalPoint.second;
+  this->intrinsic_msg_.P[7] = 0;
+  this->intrinsic_msg_.P[8] = 0;
+  this->intrinsic_msg_.P[9] = 0;
+  this->intrinsic_msg_.P[10] = 1;
+  this->intrinsic_msg_.P[11] = 0;
 }
 
 void
@@ -332,11 +421,6 @@ royale_ros::CameraNodelet::Config(royale_ros::Config::Request& req,
   //
   // Imager parameters
   //
-  // XXX: Ultimately, we will generalize this, however, for now,
-  // there is really only 1 mutable imager parameter (the so called "Use Case")
-  // at Level 1 access and so we simply process it in-line.
-  //
-  //
   royale::CameraStatus status = OK_;
   json j_img = j["Imager"];
   if (! j_img.is_null())
@@ -375,6 +459,23 @@ royale_ros::CameraNodelet::Config(royale_ros::Config::Request& req,
                             NODELET_WARN_STREAM("current_use_case is stale!");
                           }
                       }
+                    }
+                }
+              else if (key == "ExposureMode")
+                {
+                  json emode_dict = uc_root[key];
+                  for (json::iterator it = emode_dict.begin();
+                       it != emode_dict.end(); ++it)
+                    {
+                      std::uint16_t sid = std::stoi(std::string(it.key()));
+                      std::uint32_t emode =
+                        std::stoi(it.value().get<std::string>());
+
+                      royale::ExposureMode ex =
+                        emode == 0 ?
+                        royale::ExposureMode::MANUAL :
+                        royale::ExposureMode::AUTOMATIC;
+                      status = this->cam_->setExposureMode(ex, sid);
                     }
                 }
               else
@@ -470,16 +571,31 @@ royale_ros::CameraNodelet::Dump(royale_ros::Dump::Request& req,
     }
 
   std::map<std::string, std::vector<std::string> > exp_limits;
+  std::map<std::string, std::string> exp_modes;
   for (auto& sid : streamids)
     {
+      std::string sid_str = std::to_string((std::uint16_t) sid);
+
+      //
+      // exposure limits
+      //
       royale::Pair<std::uint32_t, std::uint32_t> limits;
       if (this->cam_->getExposureLimits(limits, sid) == OK_)
         {
           std::vector<std::string> l;
           l.push_back(std::to_string(limits.first));
           l.push_back(std::to_string(limits.second));
-          exp_limits.emplace(
-            std::make_pair(std::to_string((std::uint16_t) sid), l));
+          exp_limits.emplace(std::make_pair(sid_str, l));
+        }
+
+      //
+      // exposure mode
+      //
+      royale::ExposureMode emode;
+      if (this->cam_->getExposureMode(emode, sid) == OK_)
+        {
+          exp_modes.emplace(
+            std::make_pair(sid_str, std::to_string((std::uint32_t) emode)));
         }
     }
 
@@ -510,6 +626,7 @@ royale_ros::CameraNodelet::Dump(royale_ros::Dump::Request& req,
             {"NumberOfStreams", std::to_string(nstreams)},
             {"Streams", streams},
             {"ExposureLimits", json(exp_limits)},
+            {"ExposureMode", json(exp_modes)},
             {"FrameRate", std::to_string(fps)},
             {"MaxFrameRate", std::to_string(max_fps)}
           }
@@ -571,6 +688,24 @@ royale_ros::CameraNodelet::onNewData(const royale::DepthData *data)
   std_msgs::Header cloud_head = std_msgs::Header();
   cloud_head.stamp = stamp;
   cloud_head.frame_id = this->sensor_frame_;
+
+  //
+  // Publish the intrinsic calibration params.
+  // REP 104 suggests publishing the intrinsics with every frame
+  // see: http://www.ros.org/reps/rep-0104.html
+  //
+  {
+    std::lock_guard<std::mutex> lock(this->intrinsic_mutex_);
+    this->intrinsic_msg_.header = head;
+    try
+      {
+        this->intrinsic_pubs_.at(idx).publish(this->intrinsic_msg_);
+      }
+    catch (const std::out_of_range& ex)
+      {
+        NODELET_ERROR_STREAM("Could not publish intrinsics: " << ex.what());
+      }
+  }
 
   //
   // Exposure times
