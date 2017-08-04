@@ -86,6 +86,12 @@ target_link_libraries(config
   ${catkin_LIBRARIES}
   )
 
+add_executable(dump src/dump.cpp)
+target_link_libraries(dump
+  ${catkin_LIBRARIES}
+  )
+
+
 #############
 ## Install ##
 #############
@@ -93,6 +99,7 @@ target_link_libraries(config
 install(TARGETS
   royale_ros
   config
+  dump
   lscam
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
