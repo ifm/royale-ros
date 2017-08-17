@@ -65,9 +65,9 @@
       #
       # The camera node provides for a turning on/off the camera via software.
       # This allows for turning off the active illumination unit in the
-      # even the royale camera is deployed in a long-running environment
+      # event the royale camera is deployed in a long-running environment
       # like an industrial setting. This parameter sets whether or not
-      # the camera should be turned "on" at node startup time
+      # the camera should be turned "on" at node startup time.
       #
       on_at_startup: $(arg on_at_startup)
 
