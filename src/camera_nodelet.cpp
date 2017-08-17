@@ -76,6 +76,8 @@ royale_ros::CameraNodelet::onInit()
                                "camera_optical_link");
   this->np_.param<std::string>("sensor_frame", this->sensor_frame_,
                                "camera_link");
+  this->np_.param<std::string>("initial_use_case", this->initial_use_case_,
+                               "-");
 
   //------------------------------------------------------------
   // Instantiate the underlying camera device by polling the bus
@@ -287,6 +289,21 @@ royale_ros::CameraNodelet::InitCamera()
           // This whole block is a candidate to be a function for starting the
           // camera stream
           //
+          if (this->initial_use_case_ != "-")
+            {
+              NODELET_INFO_STREAM("Attempting to set initial use case to: "
+                                  << this->initial_use_case_);
+              if (this->cam_->setUseCase(
+                    royale::String(this->initial_use_case_)) != OK_)
+                {
+                  NODELET_WARN_STREAM("Could not set use case to: "
+                                      << this->initial_use_case_);
+                }
+
+              // we don't want to do this again, so we use our sentinel
+              this->initial_use_case_ = "-";
+            }
+
           {
             std::lock_guard<std::mutex> lock(this->current_use_case_mutex_);
             royale::String current_use_case;

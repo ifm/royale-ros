@@ -86,6 +86,7 @@ namespace royale_ros
     float timeout_secs_;
     std::string optical_frame_;
     std::string sensor_frame_;
+    std::string initial_use_case_;
 
     bool instantiated_publishers_;
     std::uint32_t access_level_;
