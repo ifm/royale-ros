@@ -18,6 +18,7 @@
   <arg name="camera" default="camera"/>
   <arg name="serial_number" default="-"/>
   <arg name="on_at_startup" default="true"/>
+  <arg name="use_case" default="-"/>
 
   <node pkg="nodelet"
         type="nodelet"
@@ -69,6 +70,14 @@
       # the camera should be turned "on" at node startup time
       #
       on_at_startup: $(arg on_at_startup)
+
+      #
+      # Specifies the use case to set on the camera at startup time.
+      # If the special use case of "-" (the default), no use case
+      # is set. You can always set the use case at runtime using the
+      # Config service.
+      #
+      initial_use_case: "$(arg use_case)"
     </rosparam>
   </node>
 
