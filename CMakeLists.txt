@@ -38,6 +38,7 @@ add_service_files(
 add_message_files(
   FILES
   ExposureTimes.msg
+  SetExposureTime.msg
   )
 
 generate_messages(

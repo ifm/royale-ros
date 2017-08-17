@@ -39,6 +39,7 @@
 #include <pluginlib/class_list_macros.h>
 #include <ros/ros.h>
 #include <royale_ros/ExposureTimes.h>
+#include <royale_ros/SetExposureTime.h>
 #include <royale_ros/Config.h>
 #include <royale_ros/Dump.h>
 #include <royale_ros/Start.h>
@@ -118,6 +119,13 @@ royale_ros::CameraNodelet::onInit()
     ("Stop", std::bind(&CameraNodelet::Stop, this,
                        std::placeholders::_1,
                        std::placeholders::_2));
+
+  //---------------------
+  // Topic subscriptions
+  //---------------------
+  this->exp_time_sub_ =
+    this->np_.subscribe("SetExposureTime", 1,
+                        &CameraNodelet::SetExposureTimeCb, this);
 }
 
 void
@@ -701,6 +709,22 @@ royale_ros::CameraNodelet::Dump(royale_ros::Dump::Request& req,
 
   resp.config = j.dump(2);
   return true;
+}
+
+void
+royale_ros::CameraNodelet::SetExposureTimeCb(
+  const royale_ros::SetExposureTime::ConstPtr& msg)
+{
+  std::uint16_t stream_id = msg->streamid;
+  std::uint32_t usecs = msg->exposure_usecs;
+
+  std::lock_guard<std::mutex> lock(this->cam_mutex_);
+  if (this->cam_->setExposureTime(usecs, stream_id) != OK_)
+    {
+      NODELET_WARN_STREAM("Could not set exposure to: "
+                          << usecs << " for streamid="
+                          << stream_id);
+    }
 }
 
 void

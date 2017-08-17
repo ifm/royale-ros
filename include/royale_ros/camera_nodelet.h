@@ -32,6 +32,7 @@
 #include <royale_ros/Dump.h>
 #include <royale_ros/Start.h>
 #include <royale_ros/Stop.h>
+#include <royale_ros/SetExposureTime.h>
 #include <royale.hpp>
 
 namespace royale_ros
@@ -57,6 +58,11 @@ namespace royale_ros
     bool Start(royale_ros::Start::Request& req,
                royale_ros::Start::Response& resp);
     bool Stop(royale_ros::Stop::Request& req, royale_ros::Stop::Response& resp);
+
+    //
+    // Handlers for topic subscriptions
+    //
+    void SetExposureTimeCb(const royale_ros::SetExposureTime::ConstPtr& msg);
 
     //
     // Royale callback, basically functions as our main
@@ -99,6 +105,8 @@ namespace royale_ros
     ros::ServiceServer start_srv_;
     ros::ServiceServer stop_srv_;
     ros::Timer timer_;
+
+    ros::Subscriber exp_time_sub_;
 
     std::unique_ptr<image_transport::ImageTransport> it_;
     std::vector<ros::Publisher> cloud_pubs_;
