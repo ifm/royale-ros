@@ -18,3 +18,6 @@ royale-ros TODO
   currently have implemented is enough or if we need to add additional levels
   of robustness. Currently, you should be able to plug/unplug a camera willy
   nilly and the node should self heal.
+* Add an environment variable as another option for selecting the camera serial
+  number from the bus.
+

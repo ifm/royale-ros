@@ -31,6 +31,8 @@ add_service_files(
   FILES
   Dump.srv
   Config.srv
+  Start.srv
+  Stop.srv
   )
 
 add_message_files(

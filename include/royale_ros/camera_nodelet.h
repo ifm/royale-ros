@@ -30,6 +30,8 @@
 #include <ros/ros.h>
 #include <royale_ros/Config.h>
 #include <royale_ros/Dump.h>
+#include <royale_ros/Start.h>
+#include <royale_ros/Stop.h>
 #include <royale.hpp>
 
 namespace royale_ros
@@ -52,6 +54,9 @@ namespace royale_ros
     bool Dump(royale_ros::Dump::Request& req, royale_ros::Dump::Response& resp);
     bool Config(royale_ros::Config::Request& req,
                 royale_ros::Config::Response& resp);
+    bool Start(royale_ros::Start::Request& req,
+               royale_ros::Start::Response& resp);
+    bool Stop(royale_ros::Stop::Request& req, royale_ros::Stop::Response& resp);
 
     //
     // Royale callback, basically functions as our main
@@ -70,6 +75,10 @@ namespace royale_ros
     // State
     //
 
+    // Acts as a s/w switch for the camera stream
+    bool on_;
+    std::mutex on_mutex_;
+
     std::unique_ptr<royale::ICameraDevice> cam_;
     std::mutex cam_mutex_;
     std::string serial_number_;
@@ -86,6 +95,8 @@ namespace royale_ros
     ros::NodeHandle nh_, np_;
     ros::ServiceServer dump_srv_;
     ros::ServiceServer config_srv_;
+    ros::ServiceServer start_srv_;
+    ros::ServiceServer stop_srv_;
     ros::Timer timer_;
 
     std::unique_ptr<image_transport::ImageTransport> it_;

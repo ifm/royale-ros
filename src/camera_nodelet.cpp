@@ -41,6 +41,8 @@
 #include <royale_ros/ExposureTimes.h>
 #include <royale_ros/Config.h>
 #include <royale_ros/Dump.h>
+#include <royale_ros/Start.h>
+#include <royale_ros/Stop.h>
 #include <royale.hpp>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/Image.h>
@@ -66,6 +68,7 @@ royale_ros::CameraNodelet::onInit()
 
   this->np_ = getMTPrivateNodeHandle();
   this->it_.reset(new image_transport::ImageTransport(this->np_));
+  this->np_.param<bool>("on_at_startup", this->on_, true);
   this->np_.param<std::string>("serial_number", this->serial_number_, "-");
   this->np_.param<float>("poll_bus_secs", this->poll_bus_secs_, 1.);
   this->np_.param<float>("timeout_secs", this->timeout_secs_, 1.);
@@ -99,11 +102,34 @@ royale_ros::CameraNodelet::onInit()
     ("Config", std::bind(&CameraNodelet::Config, this,
                          std::placeholders::_1,
                          std::placeholders::_2));
+
+  this->start_srv_ =
+    this->np_.advertiseService<royale_ros::Start::Request,
+                               royale_ros::Start::Response>
+    ("Start", std::bind(&CameraNodelet::Start, this,
+                        std::placeholders::_1,
+                        std::placeholders::_2));
+
+  this->stop_srv_ =
+    this->np_.advertiseService<royale_ros::Stop::Request,
+                               royale_ros::Stop::Response>
+    ("Stop", std::bind(&CameraNodelet::Stop, this,
+                       std::placeholders::_1,
+                       std::placeholders::_2));
 }
 
 void
 royale_ros::CameraNodelet::InitCamera()
 {
+  {
+    std::lock_guard<std::mutex> lock(this->on_mutex_);
+    if (! this->on_)
+      {
+        this->RescheduleTimer();
+        return;
+      }
+  }
+
   std::lock_guard<std::mutex> lock(this->cam_mutex_);
 
   // For an already initialized camera, this acts as a heartbeat
@@ -380,6 +406,27 @@ royale_ros::CameraNodelet::RescheduleTimer()
   this->timer_.setPeriod(ros::Duration(this->poll_bus_secs_));
   this->timer_.start();
 }
+
+bool
+royale_ros::CameraNodelet::Start(royale_ros::Start::Request& req,
+                                 royale_ros::Start::Response& resp)
+{
+  std::lock_guard<std::mutex> lock(this->on_mutex_);
+  this->on_ = true;
+  return true;
+}
+
+bool
+royale_ros::CameraNodelet::Stop(royale_ros::Stop::Request& req,
+                                royale_ros::Stop::Response& resp)
+{
+  std::lock_guard<std::mutex> on_lock(this->on_mutex_);
+  std::lock_guard<std::mutex> cam_lock(this->cam_mutex_);
+  this->cam_.reset();
+  this->on_ = false;
+  return true;
+}
+
 
 bool
 royale_ros::CameraNodelet::Config(royale_ros::Config::Request& req,
