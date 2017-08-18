@@ -19,7 +19,10 @@ Software Compatibility Matrix
   <tr>
     <td>0.1.0</td>
     <td>3.5</td>
-    <td>Ubuntu 16.04/Kinetic</td>
+    <td>
+      Ubuntu 16.04/Kinetic,<br/>
+      Ubuntu 14.04/Indigo
+    </td>
     <td>Pico Flexx</td>
   </tr>
 </table>
