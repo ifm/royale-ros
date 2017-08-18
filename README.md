@@ -39,6 +39,144 @@ Building and installing the software has two primary steps:
 1. [Installing the pmd Royale SDK](doc/royale_install.md)
 2. [Installing the ROS node](doc/building.md)
 
+ROS Interface
+-------------
+
+# camera nodelet
+
+The core `royale-ros` sensor interface is implemented as a ROS nodelet. This
+allows for lower-latency data processing vs. the traditional out-of-process
+node-based ROS interface for applications that require it. However, we ship a
+launch file with this package that allows for using the core `royale-ros`
+driver as a standard node. To launch the node the following command can be
+used:
+
+```
+$ roslaunch royale_ros camera.launch
+```
+
+This launch file encapsulates several features:
+
+1. It exposes some of the `camera_nodelet` parameters as command-line arguments
+   for ease of runtime configuration.
+2. It instantiates a nodelet manager which the `camera_nodelet` will be loaded
+   into.
+3. It launches the `camera_nodelet` itself.
+4. It publishes the static transform from the camera's optical frame to a
+   traditional ROS sensor frame as a tf2 `static_transform_publisher`.
+
+You can either use [this launch file](launch/camera.launch) directly, or, use
+it as a basis for integrating `royale-ros` into your own robot software
+system.
+
+## Parameters
+
+<table>
+  <tr>
+    <th>Name</th>
+    <th>Data Type</th>
+    <th>Default Value</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td>~on_at_startup</td>
+    <td>bool</td>
+    <td>true</td>
+    <td>
+      The pmd cameras use an active illumination unit as part of its ToF
+      measurement principle to compute the distance to objects in the
+      scene. Continuously pulsing the illumination unit both consumes power and
+      generates heat. To that end, for some applications, it is desireable to
+      have the ability to turn on/off the illumination unit in
+      software. royale-ros provides that capability through a ROS service call
+      (see below). This parameter controls whether or not the camera will start
+      pulsing its illumination unit (and by extension, streaming image data) at
+      node startup time.
+    </td>
+  </tr>
+  <tr>
+    <td>~serial_number</td>
+    <td>string</td>
+    <td>-</td>
+    <td>
+      Each pmd camera has a unique serial number. Each instance of the
+      royale-ros camera nodelet manages the data from a specific camera
+      instance. This parameter controls which specific camera serial number
+      this instance of the nodelet should manage. The special string "-" (a
+      minus sign, no quotes) communicates to the nodelet that the first camera
+      found on the USB bus should be used. This is convenient for cases where
+      you will only ever be using a single camera but may be using many
+      different cameras with different serial numbers. At the same time,
+      having this serial number mapping allows for robust robot configurations
+      whereby you can map camera serial numbers to semantically meaningful node
+      names (e.g., serial number XXX = front_left_camera).
+    </td>
+  </tr>
+  <tr>
+    <td>~initial_use_case</td>
+    <td>string</td>
+    <td>-</td>
+    <td>
+      pmd-based Royale cameras encapsulate a set of camera and imager settings
+      into the notion of a "use case". These use cases give a name to a set of
+      prepackaged parameter settings. This parameter allows for setting a
+      particular use case on the camera at nodelet startup time. The use case
+      can be changed at any point in time via the Config service, however, this
+      simplies setting the use case at startup. The special (and default) value
+      of "-" (a minus sign, no quotes) communicates to the nodelet that no
+      particular use case should be set at startup time.
+    </td>
+  </tr>
+  <tr>
+    <td>~poll_bus_secs</td>
+    <td>float</td>
+    <td>1.</td>
+    <td>
+      Integral to the camera nodelet is a running watchdog timer. This
+      parameter controls the frequency at which the watchdog will run a health
+      check loop. This is also the mechanism by which this nodelet provides
+      robustness to a camera cable being unplugged and re-plugged back in
+      (something that could very likely happen in an industrial setting due to
+      pintched cables, etc.). Every poll_bus_secs this node will try to
+      reinitialize the camera should it become unplugged for whatever reason.
+    </td>
+  </tr>
+  <tr>
+    <td>~timeout_secs</td>
+    <td>float</td>
+    <td>1.</td>
+    <td>
+      This is a threshold value used by the nodelet to determine that a running
+      camera has timed-out or otherwise become unavailable. On every iteration
+      of the watchdog (i.e., every poll_bus_secs), if the camera is currently
+      "on", a check is made to see if frame data have been received within this
+      timeout threshold. If this timeout threshold has been exceeded, the
+      camera will be reinitialized.
+    </td>
+  </tr>
+  <tr>
+    <td>~optical_frame</td>
+    <td>string</td>
+    <td>camera_optical_link</td>
+    <td>The name of the optical frame in the tf tree</td>
+  </tr>
+  <tr>
+    <td>~sensor_frame</td>
+    <td>string</td>
+    <td>camera_link</td>
+    <td>The name of the sensor frame in the tf tree</td>
+  </tr>
+</table>
+
+## Published Topics
+
+## Subscribed Topics
+
+## Advertised Services
+
+Additional Documentation
+------------------------
+
 
 TODO
 ----
