@@ -38,7 +38,10 @@
 namespace royale_ros
 {
   /**
-   *
+   * This class implements both the ROS nodelet interface and
+   * the Royale IDepthDataListener interface. It is the central figure of this
+   * application used to manage, configure, and acquire data from a single
+   * Royale camera.
    */
   class CameraNodelet
     : public nodelet::Nodelet, public royale::IDepthDataListener
