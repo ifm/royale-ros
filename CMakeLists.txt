@@ -78,22 +78,25 @@ target_link_libraries(royale_ros
   ${catkin_LIBRARIES}
   ${royale_LIBS}
   )
+add_dependencies(royale_ros ${PROJECT_NAME}_generate_messages_cpp)
 
 add_executable(lscam src/lscam.cpp)
 target_link_libraries(lscam
   ${royale_LIBS}
   )
+add_dependencies(lscam ${PROJECT_NAME}_generate_messages_cpp)
 
 add_executable(config src/config.cpp)
 target_link_libraries(config
   ${catkin_LIBRARIES}
   )
+add_dependencies(config ${PROJECT_NAME}_generate_messages_cpp)
 
 add_executable(dump src/dump.cpp)
 target_link_libraries(dump
   ${catkin_LIBRARIES}
   )
-
+add_dependencies(dump ${PROJECT_NAME}_generate_messages_cpp)
 
 #############
 ## Install ##
