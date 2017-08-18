@@ -170,7 +170,82 @@ system.
 
 ### Published Topics
 
+**NOTE:** pmd cameras can produce data with different imager settings
+  simulataneously. This is the so-called *mixed mode* feature. For a particular
+  use case there will be one or more data *streams* that it offers. So for each
+  image topic published by `royale-ros`, we namespace it into a stream. While
+  Royale gives each camera stream a unique *stream id* encoded as a `uint16`,
+  for the purpose of topic names, `royale-ros` streams are simply positive
+  integers. So, for example, the point cloud topic for a single stream use case
+  will be published on `stream/1/cloud`. For a mixed-mode use case (lets assume
+  two data streams), the point clouds will be published on `stream/1/cloud` and
+  `stream/2/cloud`. In the table below, we use the variable `X` as a
+  placeholder for the stream number.
+
+<table>
+  <tr>
+    <th>Name</th>
+    <th>Data Type</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td>stream/X/camera_info</td>
+    <td>sensor_msgs/CameraInfo</td>
+    <td>The intrinsic calibration parameters for the camera</td>
+  </tr>
+  <tr>
+    <td>stream/X/cloud</td>
+    <td>sensor_msgs/PointCloud2</td>
+    <td>The point cloud data</td>
+  </tr>
+  <tr>
+    <td>stream/X/conf</td>
+    <td>sensor_msgs/Image</td>
+    <td>The pixel confidence image</td>
+  </tr>
+  <tr>
+    <td>stream/X/gray</td>
+    <td>sensor_msgs/Image</td>
+    <td>The amplitude image</td>
+  </tr>
+  <tr>
+    <td>stream/X/noise</td>
+    <td>sensor_msgs/Image</td>
+    <td>The noise image</td>
+  </tr>
+  <tr>
+    <td>stream/X/xyz</td>
+    <td>sensor_msgs/Image</td>
+    <td>
+      The point cloud data (Cartesian data only, no amplitude) encoded as a
+      three channel (the x, y, z spatial planes respectively) OpenCV image.
+    </td>
+  </tr>
+  <tr>
+    <td>stream/X/exposure_times</td>
+    <td><a href="msg/ExposureTimes.msg">royale_ros/ExposureTimes</td>
+    <td>The exposure times used to acquire the pixel data.</td>
+  </tr>
+</table>
+
 ### Subscribed Topics
+
+<table>
+  <tr>
+    <th>Name</th>
+    <th>Data Type</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td>SetExposureTime</td>
+    <td><a href="msg/SetExposureTime.msg">royale_ros/SetExposureTime</td>
+    <td>
+      Allows for a lightweight/fast means to change the exposure time for the
+      current use case on-the-fly (assuming the camera is in a manual exposure
+      mode).
+    </td>
+  </tr>
+</table>
 
 ### Advertised Services
 
