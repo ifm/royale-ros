@@ -22,14 +22,14 @@
 
   <node pkg="nodelet"
         type="nodelet"
-        name="standalone_nodelet"
+        name="$(arg camera)_standalone_nodelet"
         args="manager"
         output="screen"/>
 
   <node pkg="nodelet"
         type="nodelet"
         name="$(arg camera)"
-        args="load royale_ros/camera_nodelet standalone_nodelet"
+        args="load royale_ros/camera_nodelet $(arg camera)_standalone_nodelet"
         output="screen">
 
     <!-- You can add topic remappings here, e.g.: -->

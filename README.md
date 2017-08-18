@@ -289,6 +289,7 @@ Additional Documentation
 * [Listing serial numbers of currently connected cameras](doc/lscam.md)
 * [Inspecting and configuring the camera/imager settings](doc/dump_and_config.md)
 * [Changing the exposure time on the fly](doc/changing_exposures.md)
+* [Handling multiple cameras](doc/multiple_cameras.md)
 
 TODO
 ====
