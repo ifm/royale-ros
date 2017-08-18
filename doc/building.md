@@ -113,6 +113,6 @@ the camera:
 
 At this point, you should see an rviz window that looks something like:
 
-![rviz1](doc/figures/rviz_screenshot.png)
+![rviz1](figures/rviz_screenshot.png)
 
 Congratulations! You can now utilize royale-ros.

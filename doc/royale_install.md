@@ -5,7 +5,7 @@ from pmd. It is typically packaged in a file called `libroyale.zip`. This
 document assumes you have that zip file available to you. The pmd-distributed
 Royale SDK comes with installation instructions and you are free to follow
 those. However, in this document, we present an alternate
-approach. Specifically, we provivde a method to repackage the SDK as a debian
+approach. Specifically, we provide a method to repackage the SDK as a debian
 package so that it can be cleanly integrated with the Debian/Ubuntu package
 manager.
 
