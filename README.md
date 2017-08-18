@@ -223,7 +223,7 @@ system.
   </tr>
   <tr>
     <td>stream/X/exposure_times</td>
-    <td><a href="msg/ExposureTimes.msg">royale_ros/ExposureTimes</td>
+    <td><a href="msg/ExposureTimes.msg">royale_ros/ExposureTimes</a></td>
     <td>The exposure times used to acquire the pixel data.</td>
   </tr>
 </table>
@@ -238,7 +238,7 @@ system.
   </tr>
   <tr>
     <td>SetExposureTime</td>
-    <td><a href="msg/SetExposureTime.msg">royale_ros/SetExposureTime</td>
+    <td><a href="msg/SetExposureTime.msg">royale_ros/SetExposureTime</a></td>
     <td>
       Allows for a lightweight/fast means to change the exposure time for the
       current use case on-the-fly (assuming the camera is in a manual exposure
@@ -248,6 +248,40 @@ system.
 </table>
 
 ### Advertised Services
+
+<table>
+  <tr>
+    <th>Name</th>
+    <th>Service Definition</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td>Dump</td>
+    <td><a href="srv/Dump.srv"></a></td>
+    <td>Dumps the state of the camera parameters to JSON</td>
+  </tr>
+  <tr>
+    <td>Config</td>
+    <td><a href="srv/Config.srv"></a></td>
+    <td>
+      Provides a means to configure the camera and imager settings,
+      declaratively from a JSON encoding of the desired settings.
+    </td>
+  </tr>
+  <tr>
+    <td>Start</td>
+    <td><a href="srv/Start.srv"></a></td>
+    <td>Starts the camera data stream</td>
+  </tr>
+  <tr>
+    <td>Stop</td>
+    <td><a href="srv/Stop.srv"></a></td>
+    <td>
+      Stops the camera data stream and, by extension, turns off the active
+      illumination unit.
+    </td>
+  </tr>
+</table>
 
 Additional Documentation
 ========================
