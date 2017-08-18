@@ -262,7 +262,7 @@ system.
   </tr>
   <tr>
     <td>Config</td>
-    <td><a href="srv/Config.srv"></a>royale_ros/Config</td>
+    <td><a href="srv/Config.srv">royale_ros/Config</a></td>
     <td>
       Provides a means to configure the camera and imager settings,
       declaratively from a JSON encoding of the desired settings.
@@ -270,12 +270,12 @@ system.
   </tr>
   <tr>
     <td>Start</td>
-    <td><a href="srv/Start.srv"></a>royale_ros/Start</td>
+    <td><a href="srv/Start.srv">royale_ros/Start</a></td>
     <td>Starts the camera data stream</td>
   </tr>
   <tr>
     <td>Stop</td>
-    <td><a href="srv/Stop.srv"></a>royale_ros/Stop</td>
+    <td><a href="srv/Stop.srv">royale_ros/Stop</a></td>
     <td>
       Stops the camera data stream and, by extension, turns off the active
       illumination unit.
