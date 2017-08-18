@@ -7,7 +7,7 @@ from within [ROS](http://www.ros.org/) software systems.
 ![rviz1](doc/figures/rviz_screenshot.png)
 
 Software Compatibility Matrix
------------------------------
+=============================
 
 <table>
   <tr>
@@ -33,16 +33,16 @@ Software Compatibility Matrix
   features.
 
 Building and Installing the Software
-------------------------------------
+====================================
 Building and installing the software has two primary steps:
 
 1. [Installing the pmd Royale SDK](doc/royale_install.md)
 2. [Installing the ROS node](doc/building.md)
 
 ROS Interface
--------------
+=============
 
-# camera nodelet
+## camera nodelet
 
 The core `royale-ros` sensor interface is implemented as a ROS nodelet. This
 allows for lower-latency data processing vs. the traditional out-of-process
@@ -69,7 +69,7 @@ You can either use [this launch file](launch/camera.launch) directly, or, use
 it as a basis for integrating `royale-ros` into your own robot software
 system.
 
-## Parameters
+### Parameters
 
 <table>
   <tr>
@@ -122,7 +122,7 @@ system.
       prepackaged parameter settings. This parameter allows for setting a
       particular use case on the camera at nodelet startup time. The use case
       can be changed at any point in time via the Config service, however, this
-      simplies setting the use case at startup. The special (and default) value
+      simplifies setting the use case at startup. The special (and default) value
       of "-" (a minus sign, no quotes) communicates to the nodelet that no
       particular use case should be set at startup time.
     </td>
@@ -137,7 +137,7 @@ system.
       check loop. This is also the mechanism by which this nodelet provides
       robustness to a camera cable being unplugged and re-plugged back in
       (something that could very likely happen in an industrial setting due to
-      pintched cables, etc.). Every poll_bus_secs this node will try to
+      pinched cables, etc.). Every poll_bus_secs this node will try to
       reinitialize the camera should it become unplugged for whatever reason.
     </td>
   </tr>
@@ -168,33 +168,33 @@ system.
   </tr>
 </table>
 
-## Published Topics
+### Published Topics
 
-## Subscribed Topics
+### Subscribed Topics
 
-## Advertised Services
+### Advertised Services
 
 Additional Documentation
-------------------------
+========================
 
 
 TODO
-----
+====
 The current TODO list is located [here](TODO.md). Please also see the
 [Github Issues](https://github.com/lovepark/royale-ros/issues).
 
 LICENSE
--------
+=======
 Please see the file called [LICENSE](LICENSE).
 
 ATTRIBUTION
------------
+===========
 The initial development of `royale-ros` has been sponsored by
 [Locus Robotics](http://www.locusrobotics.com/). The authors thank them for
 their contribution to the open-source robotics community.
 
 AUTHORS
--------
+=======
 Tom Panzarella <tom@loveparkrobotics.com>
 
 <p align="center">
