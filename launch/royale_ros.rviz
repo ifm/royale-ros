@@ -6,7 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-      Splitter Ratio: 0.5
+      Splitter Ratio: 0.705555558
     Tree Height: 817
   - Class: rviz/Selection
     Name: Selection
@@ -120,7 +120,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 510
+      Max Intensity: 2875
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: "PointCloud2: cloud-1"
@@ -133,7 +133,7 @@ Visualization Manager:
       Topic: /camera/stream/1/cloud
       Unreliable: false
       Use Fixed Frame: true
-      Use rainbow: false
+      Use rainbow: true
       Value: true
     - Class: rviz/Image
       Enabled: false
@@ -225,24 +225,24 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 0.247040063
+      Distance: 0.61221987
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.270736903
-        Y: -0.0276302248
-        Z: 0.00269856583
+        X: 0.078488186
+        Y: -0.0281715542
+        Z: 0.0150952628
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.0500000007
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.0497981496
+      Pitch: 0.00539828558
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.15356565
+      Yaw: 3.18039846
     Saved: ~
 Window Geometry:
   Displays:
