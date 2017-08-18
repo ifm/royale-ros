@@ -286,7 +286,9 @@ system.
 Additional Documentation
 ========================
 
-1. [Inspecting and configuring the camera/imager settings](doc/dump_and_config.md)
+* [Listing serial numbers of currently connected cameras](doc/lscam.md)
+* [Inspecting and configuring the camera/imager settings](doc/dump_and_config.md)
+* [Changing the exposure time on the fly](doc/changing_exposures.md)
 
 TODO
 ====
