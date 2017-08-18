@@ -577,6 +577,13 @@ royale_ros::CameraNodelet::Config(royale_ros::Config::Request& req,
 
   resp.status = 0;
   resp.msg = "OK";
+
+  // avoid camera timeouts
+  {
+    std::lock_guard<std::mutex> lock(this->last_frame_mutex_);
+    this->last_frame_ = ros::Time::now();
+  }
+
   return true;
 }
 
