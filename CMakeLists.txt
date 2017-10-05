@@ -1,16 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(royale_ros)
 
-set(ROYALE_ROOT "/opt/royale" CACHE STRING "Root directory to Royale SDK")
-
-find_package(royale REQUIRED
-  PATHS ${ROYALE_ROOT}/share
-  )
 find_package(Boost REQUIRED)
-
-MESSAGE(STATUS "ROYALE_ROOT: " ${ROYALE_ROOT})
-MESSAGE(STATUS "royale_LIB_DIR: " ${royale_LIB_DIR})
-MESSAGE(STATUS "royale_LIBS: " ${royale_LIBS})
 
 find_package(catkin REQUIRED COMPONENTS
   nodelet
@@ -20,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   image_transport
   pcl_ros
+  royale
   sensor_msgs
   tf2_ros
   )
@@ -49,8 +41,6 @@ generate_messages(
 ###################################
 ## catkin specific configuration ##
 ###################################
-catkin_add_env_hooks(royale_env SHELLS sh)
-
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES royale_ros
@@ -60,29 +50,23 @@ catkin_package(
 #############
 ##  Build  ##
 #############
-# getting ugly warning coming out of ros/time.h, silence them for now
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-conversion -std=c++11")
+set_directory_properties(PROPERTIES COMPILE_OPTIONS "-std=c++11;-Wall;-Werror;-Wno-maybe-uninitialized")
 
 include_directories(
   include
-  ${ROYALE_ROOT}/include
   ${Boost_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
-  )
-link_directories(
-  ${royale_LIB_DIR}
   )
 
 add_library(royale_ros src/camera_nodelet.cpp)
 target_link_libraries(royale_ros
   ${catkin_LIBRARIES}
-  ${royale_LIBS}
   )
 add_dependencies(royale_ros ${PROJECT_NAME}_generate_messages_cpp)
 
 add_executable(lscam src/lscam.cpp)
 target_link_libraries(lscam
-  ${royale_LIBS}
+  ${catkin_LIBRARIES}
   )
 add_dependencies(lscam ${PROJECT_NAME}_generate_messages_cpp)
 
