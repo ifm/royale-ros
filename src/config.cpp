@@ -31,7 +31,7 @@ int main(int argc, char **argv)
 
   ros::NodeHandle nh("~");
   nh.param("infile", infile, std::string("-"));
-  nh.param("srv", service_name, std::string("Config"));
+  nh.param("srv", service_name, std::string("/camera/Config"));
 
   if (infile == "-")
   {

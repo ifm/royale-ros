@@ -27,7 +27,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "royale_ros_dump");
 
   ros::NodeHandle nh("~");
-  nh.param("srv", service_name, std::string("Dump"));
+  nh.param("srv", service_name, std::string("/camera/Dump"));
 
   ros::ServiceClient client =
     nh.serviceClient<royale_ros::Dump>(service_name);
