@@ -25,15 +25,23 @@ Software Compatibility Matrix
     </td>
     <td>Pico Flexx</td>
   </tr>
+  <tr>
+    <td>0.2.0</td>
+    <td>3.16.0.51</td>
+    <td>
+      Ubuntu 16.04/Kinetic
+    </td>
+    <td>
+      Pico Flexx,<br/>
+      Pico Monstar
+    </td>
+  </tr>
 </table>
 
 **NOTE:** Theoretically, any camera supported by Royale will be compatible with
   this library. However, the above listed hardware is what we have available to
   us for testing. We welcome your feedback related to other Royale-based
   cameras and their compatibility with this ROS interface.
-
-**NOTE 2:** This library is (currently) limited to Royale's Level 1 access
-  features.
 
 Building and Installing the Software
 ====================================
@@ -80,6 +88,16 @@ system.
     <th>Data Type</th>
     <th>Default Value</th>
     <th>Description</th>
+  </tr>
+  <tr>
+    <td>~access_code</td>
+    <td>string</td>
+    <td>-</td>
+    <td>
+      The Royale access code used to unlock level 2+ access to the Royale SDK
+      functions. If no access code is supplied (the default), Level 1 access
+      will be granted by Royale.
+    </td>
   </tr>
   <tr>
     <td>~on_at_startup</td>

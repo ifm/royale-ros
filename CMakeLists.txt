@@ -61,7 +61,7 @@ catkin_package(
 ##  Build  ##
 #############
 # getting ugly warning coming out of ros/time.h, silence them for now
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-conversion -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-conversion -std=c++14")
 
 include_directories(
   include

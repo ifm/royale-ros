@@ -19,6 +19,7 @@
   <arg name="serial_number" default="-"/>
   <arg name="on_at_startup" default="true"/>
   <arg name="use_case" default="-"/>
+  <arg name="access_code" default="-"/>
 
   <node pkg="nodelet"
         type="nodelet"
@@ -36,6 +37,12 @@
     <!-- <remap from="/$(arg camera)/stream/1/cloud" to="/$(arg camera)/cloud"/> -->
 
     <rosparam subst_value="true">
+      #
+      # Access code for unlocking features beyond Royale Level 1 access
+      # Please contact pmdtec for a valid code.
+      #
+      access_code: "$(arg access_code)"
+
       #
       # This is the specific camera to connect to
       # or the special string "-" to connect to the

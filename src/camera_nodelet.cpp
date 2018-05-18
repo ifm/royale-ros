@@ -18,6 +18,7 @@
 #include <royale_ros/contrib/json.hpp>
 
 #include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <cstdint>
 #include <functional>
@@ -53,12 +54,16 @@ namespace enc = sensor_msgs::image_encodings;
 using json = nlohmann::json;
 constexpr auto OK_ = royale::CameraStatus::SUCCESS;
 
+//================================================
+// Nodelet implementation
+//================================================
+
 void
 royale_ros::CameraNodelet::onInit()
 {
   NODELET_INFO_STREAM("onInit(): " << this->getName());
 
-  // Currently, we only support LEVEL 1 access to the device.
+  // Royale SDK access level
   this->access_level_ = 0;
 
   // flag indicating that we have not yet created our image publishers
@@ -70,6 +75,7 @@ royale_ros::CameraNodelet::onInit()
   this->np_ = getMTPrivateNodeHandle();
   this->it_.reset(new image_transport::ImageTransport(this->np_));
   this->np_.param<bool>("on_at_startup", this->on_, true);
+  this->np_.param<std::string>("access_code", this->access_code_, "-");
   this->np_.param<std::string>("serial_number", this->serial_number_, "-");
   this->np_.param<float>("poll_bus_secs", this->poll_bus_secs_, 1.);
   this->np_.param<float>("timeout_secs", this->timeout_secs_, 1.);
@@ -160,9 +166,9 @@ royale_ros::CameraNodelet::InitCamera()
       return;
     }
 
-
   NODELET_INFO_STREAM("Probing for available royale cameras...");
-  royale::CameraManager manager;
+  royale::CameraManager manager(this->access_code_ == "-"
+                                ? "" : this->access_code_);
   auto camlist = manager.getConnectedCameraList();
 
   if (! camlist.empty())
@@ -486,7 +492,7 @@ royale_ros::CameraNodelet::Config(royale_ros::Config::Request& req,
       NODELET_ERROR_STREAM("The passed in json should be an object!");
       NODELET_INFO_STREAM("json was:\n" << j.dump());
       resp.status = -1;
-      resp.msg = "The passed in json shuld be an object";
+      resp.msg = "The passed in json should be an object";
       return true;
     }
 
@@ -550,6 +556,130 @@ royale_ros::CameraNodelet::Config(royale_ros::Config::Request& req,
                       status = this->cam_->setExposureMode(ex, sid);
                     }
                 }
+              else if (key == "ProcessingParameters")
+                {
+                  if (this->access_level_ >= 2)
+                    {
+                      json pp_dict = uc_root[key];
+                      for (json::iterator sid_it = pp_dict.begin();
+                           sid_it != pp_dict.end(); ++sid_it)
+                        {
+                          std::uint16_t sid =
+                            std::stoi(std::string(sid_it.key()));
+
+                          //
+                          // create a lut mapping string->id for the
+                          // processing parameters so we can call into royale
+                          // to set the values.
+                          //
+                          // Unfortunately, to get the params we need the
+                          // stream id, so we make this lut for each stream id
+                          // present in the json
+                          //
+                          std::unordered_map<std::string,
+                                             royale::ProcessingFlag> pp_lut;
+
+                          royale::ProcessingParameterVector ppvec;
+                          if (this->cam_->getProcessingParameters(ppvec, sid)
+                              == OK_)
+                            {
+                              for (auto& pflag_pair : ppvec)
+                                {
+                                  std::string pname(
+                                    royale::getProcessingFlagName(
+                                      pflag_pair.first).data());
+
+                                  pp_lut.emplace(
+                                    std::make_pair(pname, pflag_pair.first));
+                                }
+                            }
+
+                          royale::ProcessingParameterVector ppvec_new;
+
+                          json pp_values_dict = pp_dict[sid_it.key()];
+                          for (json::iterator pp_it = pp_values_dict.begin();
+                               pp_it != pp_values_dict.end(); ++ pp_it)
+                            {
+                              std::string pp_key = pp_it.key();
+                              std::string pp_val = pp_values_dict[pp_key];
+                              auto const tpos = pp_key.find_last_of('_');
+                              if (tpos == std::string::npos)
+                                {
+                                  NODELET_WARN_STREAM(
+                                    "Could not pull the type string from: "
+                                    << pp_key);
+                                  continue;
+                                }
+
+                              std::string type_str = pp_key.substr(tpos+1);
+                              std::transform(type_str.begin(), type_str.end(),
+                                             type_str.begin(),
+                                             [](unsigned char c)
+                                             { return std::tolower(c); });
+
+                              royale::Variant var;
+                              if (type_str == "int")
+                                {
+                                  var.setInt(std::stoi(pp_val));
+                                }
+                              else if (type_str == "float")
+                                {
+                                  var.setFloat(std::stof(pp_val));
+                                }
+                              else if (type_str == "bool")
+                                {
+                                  std::transform(pp_val.begin(),
+                                                 pp_val.end(),
+                                                 pp_val.begin(),
+                                                 [](unsigned char c)
+                                                 { return std::tolower(c); });
+
+                                  var.setBool(((pp_val == "true") ||
+                                               (pp_val == "t") ||
+                                               (pp_val == "yes") ||
+                                               (pp_val == "y") ||
+                                               (pp_val == "1")) ? true : false);
+                                }
+                              else
+                                {
+                                  NODELET_WARN_STREAM(
+                                   "Bad type for `Variant': "
+                                   << type_str);
+                                  continue;
+                                }
+
+                              try
+                                {
+                                  ppvec_new.push_back(
+                                    royale::Pair<
+                                      royale::ProcessingFlag,
+                                      royale::Variant>(
+                                        pp_lut.at(pp_key), var));;
+                                }
+                              catch (const std::out_of_range& ex)
+                                {
+                                  NODELET_WARN_STREAM(pp_key << "=" << pp_val);
+                                  NODELET_WARN_STREAM(ex.what());
+                                  continue;
+                                }
+                            }
+
+                          status =
+                            this->cam_->setProcessingParameters(ppvec_new, sid);
+                          if (status != OK_)
+                            {
+                              NODELET_WARN_STREAM(
+                                (int) status << ": " <<
+                                royale::getErrorString(status).c_str());
+                            }
+                        }
+                    }
+                  else
+                    {
+                      NODELET_WARN_STREAM(
+                        "'ProcessingParameters' requires L2 access!");
+                    }
+                }
               else
                 {
                   // read-only parameter
@@ -599,9 +729,10 @@ royale_ros::CameraNodelet::Dump(royale_ros::Dump::Request& req,
       return false;
     }
 
-  //
+  //-------------------------------------------------------------------
   // "Device" information
-  //
+  //-------------------------------------------------------------------
+
   royale::String r_string;
   std::unordered_map<std::string, std::string> device_info;
   if (this->cam_->getId(r_string) == OK_)
@@ -615,9 +746,9 @@ royale_ros::CameraNodelet::Dump(royale_ros::Dump::Request& req,
         std::make_pair("Name", std::string(r_string.c_str())));
     }
 
-  //
+  //-------------------------------------------------------------------
   // "Imager" information
-  //
+  //-------------------------------------------------------------------
 
   royale::Vector<royale::String> use_cases;
   json uc_vec; // list
@@ -651,6 +782,7 @@ royale_ros::CameraNodelet::Dump(royale_ros::Dump::Request& req,
 
   std::map<std::string, std::vector<std::string> > exp_limits;
   std::map<std::string, std::string> exp_modes;
+  std::map<std::string, std::map<std::string, std::string> > proc_params;
   for (auto& sid : streamids)
     {
       std::string sid_str = std::to_string((std::uint16_t) sid);
@@ -676,6 +808,57 @@ royale_ros::CameraNodelet::Dump(royale_ros::Dump::Request& req,
           exp_modes.emplace(
             std::make_pair(sid_str, std::to_string((std::uint32_t) emode)));
         }
+
+      //
+      // If we have access >= level 2, things get more interesting
+      //
+      if (this->access_level_ >= 2)
+        {
+          royale::ProcessingParameterVector ppvec;
+          if (this->cam_->getProcessingParameters(ppvec, sid) == OK_)
+            {
+              std::map<std::string, std::string> proc_params_kv;
+              for (auto& pflag_pair : ppvec)
+                {
+                  try
+                    {
+                      std::string pname(
+                        royale::getProcessingFlagName(pflag_pair.first).data());
+
+                      std::string pvalue;
+                      switch (static_cast<int>(pflag_pair.second.variantType()))
+                        {
+                        case static_cast<int>(royale::VariantType::Int):
+                          pvalue = std::to_string(pflag_pair.second.getInt());
+                          break;
+
+                        case static_cast<int>(royale::VariantType::Float):
+                          pvalue = std::to_string(pflag_pair.second.getFloat());
+                          break;
+
+                        case static_cast<int>(royale::VariantType::Bool):
+                          pvalue =
+                            pflag_pair.second.getBool() ? "true" : "false";
+                          break;
+
+                        default:
+                          NODELET_WARN_STREAM(
+                            "Unknown variant type for pflag="
+                            << static_cast<int>(pflag_pair.first));
+                          break;
+                        }
+
+                      proc_params_kv.emplace(std::make_pair(pname, pvalue));
+                    }
+                  catch (const std::out_of_range& ex)
+                    {
+                      NODELET_WARN_STREAM("Unknown processing parameter: "
+                                          << (int) pflag_pair.first);
+                    }
+                }
+              proc_params.emplace(std::make_pair(sid_str, proc_params_kv));
+            }
+        }
     }
 
   std::uint16_t max_width = 0;
@@ -688,9 +871,10 @@ royale_ros::CameraNodelet::Dump(royale_ros::Dump::Request& req,
   this->cam_->getMaxFrameRate(max_fps);
   this->cam_->getFrameRate(fps);
 
-  //
+  //-------------------------------------------------------------------
   // Serialize to JSON
-  //
+  //-------------------------------------------------------------------
+
   json j =
     {
       {"Device", json(device_info)},
@@ -706,6 +890,7 @@ royale_ros::CameraNodelet::Dump(royale_ros::Dump::Request& req,
             {"Streams", streams},
             {"ExposureLimits", json(exp_limits)},
             {"ExposureMode", json(exp_modes)},
+            {"ProcessingParameters", json(proc_params)},
             {"FrameRate", std::to_string(fps)},
             {"MaxFrameRate", std::to_string(max_fps)}
           }

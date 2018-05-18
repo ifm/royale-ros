@@ -90,6 +90,7 @@ namespace royale_ros
 
     std::unique_ptr<royale::ICameraDevice> cam_;
     std::mutex cam_mutex_;
+    std::string access_code_;
     std::string serial_number_;
     float poll_bus_secs_;
     float timeout_secs_;

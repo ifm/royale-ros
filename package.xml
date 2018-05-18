@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>royale_ros</name>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
   <description>pmd Royale-based 3D ToF Camera ROS package</description>
   <maintainer email="tom@loveparkrobotics.com">Tom Panzarella</maintainer>
   <license>Apache 2</license>
