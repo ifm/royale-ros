@@ -39,6 +39,7 @@ add_message_files(
   FILES
   ExposureTimes.msg
   SetExposureTime.msg
+  SetExposureTimes.msg
   )
 
 generate_messages(

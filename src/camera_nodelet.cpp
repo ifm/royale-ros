@@ -41,6 +41,7 @@
 #include <ros/ros.h>
 #include <royale_ros/ExposureTimes.h>
 #include <royale_ros/SetExposureTime.h>
+#include <royale_ros/SetExposureTimes.h>
 #include <royale_ros/Config.h>
 #include <royale_ros/Dump.h>
 #include <royale_ros/Start.h>
@@ -129,9 +130,15 @@ royale_ros::CameraNodelet::onInit()
   //---------------------
   // Topic subscriptions
   //---------------------
+
+  // L1 access call
   this->exp_time_sub_ =
     this->np_.subscribe("SetExposureTime", 1,
                         &CameraNodelet::SetExposureTimeCb, this);
+  // L2 access call
+  this->exp_times_sub_ =
+    this->np_.subscribe("SetExposureTimes", 1,
+                        &CameraNodelet::SetExposureTimesCb, this);
 }
 
 void
@@ -457,7 +464,6 @@ royale_ros::CameraNodelet::Stop(royale_ros::Stop::Request& req,
   this->on_ = false;
   return true;
 }
-
 
 bool
 royale_ros::CameraNodelet::Config(royale_ros::Config::Request& req,
@@ -916,6 +922,31 @@ royale_ros::CameraNodelet::SetExposureTimeCb(
       NODELET_WARN_STREAM("Could not set exposure to: "
                           << usecs << " for streamid="
                           << stream_id);
+    }
+}
+
+void
+royale_ros::CameraNodelet::SetExposureTimesCb(
+  const royale_ros::SetExposureTimes::ConstPtr& msg)
+{
+  std::uint16_t stream_id = msg->streamid;
+  std::vector<std::uint32_t> usecs = msg->exposure_usecs;
+
+  std::lock_guard<std::mutex> lock(this->cam_mutex_);
+  auto status =
+    this->cam_->setExposureTimes(
+      royale::Vector<std::uint32_t>(usecs), stream_id);
+  if (status != OK_)
+    {
+      NODELET_WARN_STREAM("Could not set exposure times on stream="
+                          << (int) stream_id);
+      for (auto i : usecs)
+        {
+          NODELET_WARN_STREAM("Exposure: " << i);
+        }
+
+      NODELET_WARN_STREAM((int) status << ": "
+                          << royale::getErrorString(status).c_str());
     }
 }
 
