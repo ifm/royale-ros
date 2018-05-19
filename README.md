@@ -266,6 +266,17 @@ system.
       mode).
     </td>
   </tr>
+  <tr>
+    <td>SetExposureTimes</td>
+    <td><a href="msg/SetExposureTimes.msg">royale_ros/SetExposureTimes</a></td>
+    <td>
+      Allows for a lightweight/fast means to change the exposure times for the
+      current use case on-the-fly (assuming the camera is in a manual exposure
+      mode). This feature is only available if the camera_nodelet is running
+      with Level 2 access. It allows for finer-grained access to all
+      exposures.
+    </td>
+  </tr>
 </table>
 
 ### Advertised Services
@@ -312,11 +323,6 @@ Additional Documentation
 * [Changing the exposure time on the fly](doc/changing_exposures.md)
 * [Handling multiple cameras](doc/multiple_cameras.md)
 
-TODO
-====
-The current TODO list is located [here](TODO.md). Please also see the
-[Github Issues](https://github.com/lovepark/royale-ros/issues).
-
 LICENSE
 =======
 Please see the file called [LICENSE](LICENSE).
@@ -329,7 +335,7 @@ their contribution to the open-source robotics community.
 
 AUTHORS
 =======
-Tom Panzarella <tom@loveparkrobotics.com>
+[Tom Panzarella](https://github.com/tpanzarella)
 
 <p align="center">
   <br/>

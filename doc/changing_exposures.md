@@ -8,7 +8,7 @@ exposure is set on a per stream basis.
 The first step is to inspect our current camera configuration.
 
 ```
-$ rosrun royale_ros dump _srv:=/camera/Dump
+$ rosrun royale_ros dump
 {
   "Device": {
     "Id": "0005-4804-0050-1916",
@@ -108,6 +108,30 @@ header:
     nsecs: 649880886
   frame_id: camera_optical_link
 usec: [200, 1000, 1000]
+---
+^C
+```
+
+If your `camera_nodelet` is running with level 2 access, you will have access
+to finer-grained control over all of the exposure times via the
+`/camera/SetExposureTimes` service:
+
+```
+$ rostopic pub -1 /camera/SetExposureTimes royale_ros/SetExposureTimes "streamid: 0
+exposure_usecs: [100, 1000, 1750]"
+```
+
+And,
+
+```
+$ rostopic echo /camera/stream/1/exposure_times
+header:
+  seq: 5528
+  stamp:
+    secs: 1526690890
+    nsecs: 376950026
+  frame_id: "camera_optical_link"
+usec: [100, 1000, 1750]
 ---
 ^C
 ```

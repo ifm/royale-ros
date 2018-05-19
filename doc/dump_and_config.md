@@ -68,7 +68,7 @@ pipeline. To that end, we provide a convenience tool to be used as part of a
 pipeline. To produce the same output but while emitting valid JSON you can:
 
 ```
-$ rosrun royale_ros dump _srv:=/camera/Dump
+$ rosrun royale_ros dump
 {
   "Device": {
     "Id": "0005-4804-0050-1916",
@@ -120,7 +120,7 @@ of robots or fleets of cameras on a single robot or fleets of cameras
 distributed over a fleet of robots -- you get the point).
 
 ```
-$ rosrun royale_ros dump _srv:=/camera/Dump | jq .Imager.UseCases
+$ rosrun royale_ros dump | jq .Imager.UseCases
 [
   "MODE_9_5FPS_2000",
   "MODE_9_10FPS_1000",
@@ -133,6 +133,81 @@ $ rosrun royale_ros dump _srv:=/camera/Dump | jq .Imager.UseCases
 ]
 ```
 
+We note, that the examples above show exemplary output with Royale level 1
+access. If you started the `camera_nodelet` with a level 2 (or greater) access
+code, the Royale processing parameters will also be exposed and are
+tunable. For completeness, a level dump from a Pico Flexx may look like this:
+
+```
+{
+  "Device": {
+    "Id": "0005-4804-0050-1916",
+    "Name": "PICOFLEXX"
+  },
+  "Imager": {
+    "CurrentUseCase": {
+      "ExposureLimits": {
+        "57082": [
+          "27",
+          "2000"
+        ]
+      },
+      "ExposureMode": {
+        "57082": "0"
+      },
+      "FrameRate": "5",
+      "MaxFrameRate": "5",
+      "Name": "MODE_9_5FPS_2000",
+      "NumberOfStreams": "1",
+      "ProcessingParameters": {
+        "57082": {
+          "AdaptiveNoiseFilterType_Int": "1",
+          "AutoExposureRefValue_Float": "1000.000000",
+          "ConsistencyTolerance_Float": "1.200000",
+          "FlyingPixelsF0_Float": "0.018000",
+          "FlyingPixelsF1_Float": "0.140000",
+          "FlyingPixelsFarDist_Float": "4.500000",
+          "FlyingPixelsNearDist_Float": "1.000000",
+          "GlobalBinning_Int": "1",
+          "LowerSaturationThreshold_Int": "400",
+          "MPIAmpThreshold_Float": "0.300000",
+          "MPIDistThreshold_Float": "0.100000",
+          "MPINoiseDistance_Float": "3.000000",
+          "NoiseThreshold_Float": "0.070000",
+          "UpperSaturationThreshold_Int": "3750",
+          "UseAdaptiveBinning_Bool": "false",
+          "UseAdaptiveNoiseFilter_Bool": "true",
+          "UseAutoExposure_Bool": "false",
+          "UseFilter2Freq_Bool": "true",
+          "UseMPIFlagAverage_Bool": "true",
+          "UseMPIFlag_Amp_Bool": "true",
+          "UseMPIFlag_Dist_Bool": "true",
+          "UseRemoveFlyingPixel_Bool": "true",
+          "UseRemoveStrayLight_Bool": "false",
+          "UseSparsePointCloud_Bool": "false",
+          "UseValidateImage_Bool": "true"
+        }
+      },
+      "Streams": [
+        "57082"
+      ]
+    },
+    "MaxSensorHeight": "171",
+    "MaxSensorWidth": "224",
+    "UseCases": [
+      "MODE_9_5FPS_2000",
+      "MODE_9_10FPS_1000",
+      "MODE_9_15FPS_700",
+      "MODE_9_25FPS_450",
+      "MODE_5_35FPS_600",
+      "MODE_5_45FPS_500",
+      "MODE_MIXED_30_5",
+      "MODE_MIXED_50_5"
+    ]
+  }
+}
+```
+
 ## The Config service
 
 To change camera/imager parameters, the `Config` service is used. The `Config`
@@ -142,17 +217,12 @@ this allows for *declaratively* mutating camera parameters. We also note that
 the whole JSON encoding need not be specified (we will exploit this in the
 example below).
 
-**NOTE:** Since this library currently only supports Level 1 access as defined
-  by the Royale SDK, the parameters that the `Config` service can mutate are
-  limited. Specifically, as of this writing, only the `CurrentUseCase` and
-  `ExposureMode` can be changed.
-
 For exemplary purposes, we will use the command line to change the current use
 case on the camera. Let's baseline the camera's current state by inspecting the
 dump:
 
 ```
-$ rosrun royale_ros dump _srv:=/camera/Dump
+$ rosrun royale_ros dump
 {
   "Device": {
     "Id": "0005-4804-0050-1916",
@@ -197,14 +267,14 @@ As a first step to changing the use case, let's first discover the current use
 case that is active on the camera:
 
 ```
-$ rosrun royale_ros dump _srv:=/camera/Dump | jq .Imager.CurrentUseCase.Name
+$ rosrun royale_ros dump | jq .Imager.CurrentUseCase.Name
 "MODE_9_5FPS_2000"
 ```
 
 Next, let's see what valid use cases we can set on the camera
 
 ```
-$ rosrun royale_ros dump _srv:=/camera/Dump | jq .Imager.UseCases
+$ rosrun royale_ros dump | jq .Imager.UseCases
 [
   "MODE_9_5FPS_2000",
   "MODE_9_10FPS_1000",
@@ -220,18 +290,18 @@ $ rosrun royale_ros dump _srv:=/camera/Dump | jq .Imager.UseCases
 For fun, let's apply one of the mixed mode uses cases to the camera:
 
 ```
-$ echo '{"Imager":{"CurrentUseCase":{"Name":"MODE_MIXED_30_5"}}}' | rosrun royale_ros config _srv:=/camera/Config
+$ echo '{"Imager":{"CurrentUseCase":{"Name":"MODE_MIXED_30_5"}}}' | rosrun royale_ros config
 [ INFO] [1503078647.907152832]: status=0
 [ INFO] [1503078647.907353149]: msg=OK
 ```
 
-(For clarity, all we needed to do was pipe in a valid JSON snippet to set the
-new use case on the camera.)
+For clarity, all we needed to do was pipe in a valid JSON snippet to set the
+new use case on the camera.
 
 We now check to see that our camera setting did in fact get set on the camera:
 
 ```
-$ rosrun royale_ros dump _srv:=/camera/Dump | jq .Imager.CurrentUseCase.Name
+$ rosrun royale_ros dump | jq .Imager.CurrentUseCase.Name
 "MODE_MIXED_30_5"
 ```
 
@@ -264,6 +334,111 @@ now two streams encoded in the dump):
       "MaxFrameRate": "30",
       "Name": "MODE_MIXED_30_5",
       "NumberOfStreams": "2",
+      "Streams": [
+        "57082",
+        "57083"
+      ]
+    },
+    "MaxSensorHeight": "171",
+    "MaxSensorWidth": "224",
+    "UseCases": [
+      "MODE_9_5FPS_2000",
+      "MODE_9_10FPS_1000",
+      "MODE_9_15FPS_700",
+      "MODE_9_25FPS_450",
+      "MODE_5_35FPS_600",
+      "MODE_5_45FPS_500",
+      "MODE_MIXED_30_5",
+      "MODE_MIXED_50_5"
+    ]
+  }
+}
+```
+
+And with level 2 access:
+
+```
+{
+  "Device": {
+    "Id": "0005-4804-0050-1916",
+    "Name": "PICOFLEXX"
+  },
+  "Imager": {
+    "CurrentUseCase": {
+      "ExposureLimits": {
+        "57082": [
+          "134",
+          "300"
+        ],
+        "57083": [
+          "134",
+          "1300"
+        ]
+      },
+      "ExposureMode": {
+        "57082": "0",
+        "57083": "0"
+      },
+      "FrameRate": "40",
+      "MaxFrameRate": "30",
+      "Name": "MODE_MIXED_30_5",
+      "NumberOfStreams": "2",
+      "ProcessingParameters": {
+        "57082": {
+          "AdaptiveNoiseFilterType_Int": "1",
+          "AutoExposureRefValue_Float": "1000.000000",
+          "ConsistencyTolerance_Float": "1.200000",
+          "FlyingPixelsF0_Float": "0.018000",
+          "FlyingPixelsF1_Float": "0.140000",
+          "FlyingPixelsFarDist_Float": "4.500000",
+          "FlyingPixelsNearDist_Float": "1.000000",
+          "GlobalBinning_Int": "1",
+          "LowerSaturationThreshold_Int": "400",
+          "MPIAmpThreshold_Float": "0.300000",
+          "MPIDistThreshold_Float": "0.100000",
+          "MPINoiseDistance_Float": "3.000000",
+          "NoiseThreshold_Float": "0.070000",
+          "UpperSaturationThreshold_Int": "3750",
+          "UseAdaptiveBinning_Bool": "false",
+          "UseAdaptiveNoiseFilter_Bool": "true",
+          "UseAutoExposure_Bool": "false",
+          "UseFilter2Freq_Bool": "false",
+          "UseMPIFlagAverage_Bool": "false",
+          "UseMPIFlag_Amp_Bool": "false",
+          "UseMPIFlag_Dist_Bool": "false",
+          "UseRemoveFlyingPixel_Bool": "true",
+          "UseRemoveStrayLight_Bool": "false",
+          "UseSparsePointCloud_Bool": "false",
+          "UseValidateImage_Bool": "true"
+        },
+        "57083": {
+          "AdaptiveNoiseFilterType_Int": "1",
+          "AutoExposureRefValue_Float": "1000.000000",
+          "ConsistencyTolerance_Float": "1.200000",
+          "FlyingPixelsF0_Float": "0.018000",
+          "FlyingPixelsF1_Float": "0.140000",
+          "FlyingPixelsFarDist_Float": "4.500000",
+          "FlyingPixelsNearDist_Float": "1.000000",
+          "GlobalBinning_Int": "1",
+          "LowerSaturationThreshold_Int": "400",
+          "MPIAmpThreshold_Float": "0.300000",
+          "MPIDistThreshold_Float": "0.100000",
+          "MPINoiseDistance_Float": "3.000000",
+          "NoiseThreshold_Float": "0.070000",
+          "UpperSaturationThreshold_Int": "3750",
+          "UseAdaptiveBinning_Bool": "false",
+          "UseAdaptiveNoiseFilter_Bool": "true",
+          "UseAutoExposure_Bool": "false",
+          "UseFilter2Freq_Bool": "true",
+          "UseMPIFlagAverage_Bool": "false",
+          "UseMPIFlag_Amp_Bool": "false",
+          "UseMPIFlag_Dist_Bool": "false",
+          "UseRemoveFlyingPixel_Bool": "true",
+          "UseRemoveStrayLight_Bool": "false",
+          "UseSparsePointCloud_Bool": "false",
+          "UseValidateImage_Bool": "true"
+        }
+      },
       "Streams": [
         "57082",
         "57083"
